@@ -23,25 +23,25 @@ install:
 	$(PIP) install -e ".[dev]"
 
 validate:
-	$(PY) -m src.cli validate --config $(CONFIG)
+	$(PY) -m barn_eval.cli validate --config $(CONFIG)
 
 eval:
-	$(PY) -m src.cli run --config $(CONFIG)
+	$(PY) -m barn_eval.cli run --config $(CONFIG)
 
 test:
 	$(VENV)/bin/pytest
 
 reliability:
-	$(PY) -m src.cli reliability --config $(CONFIG)
+	$(PY) -m barn_eval.cli reliability --config $(CONFIG)
 
 report:
-	$(PY) -m src.cli report --config $(CONFIG)
+	$(PY) -m barn_eval.cli report --config $(CONFIG)
 
 hash-cases:
-	$(PY) -m src.cli validate --config $(CONFIG) --rehash
+	$(PY) -m barn_eval.cli validate --config $(CONFIG) --rehash
 
 lint:
-	$(VENV)/bin/ruff check src tests
+	$(VENV)/bin/ruff check src/barn_eval tests
 
 clean:
 	rm -rf $(VENV) .pytest_cache **/__pycache__

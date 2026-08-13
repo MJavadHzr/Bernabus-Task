@@ -9,5 +9,5 @@ primary evidence) and cannot violate type 1.
 
 Scope limit: this detects violations PRESENT IN THE RESPONSE RECORD. It does not
 verify the pipeline's promotion logic, which is not observable from a response -
-that is src/authority/, demonstrated by construction.
+that is src/barn_eval/authority/, demonstrated by construction.
 """

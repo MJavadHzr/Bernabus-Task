@@ -321,7 +321,7 @@ Reported per violation type, never blended.
 ```
 Gate: any occurrence blocks release (§3.14, condition 3).
 
-**Scope limitation — stated explicitly because this result is easy to overstate.** These checks verify that violations *are detected when present in the response record*. They do not verify the pipeline's promotion logic, which is a property of the system's internals and not observable from a response. That property is demonstrated separately, by construction, via the enforced state machine in `src/authority/` and its unit tests. The report must not present construction evidence as measurement evidence.
+**Scope limitation — stated explicitly because this result is easy to overstate.** These checks verify that violations *are detected when present in the response record*. They do not verify the pipeline's promotion logic, which is a property of the system's internals and not observable from a response. That property is demonstrated separately, by construction, via the enforced state machine in `src/barn_eval/authority/` and its unit tests. The report must not present construction evidence as measurement evidence.
 
 ---
 

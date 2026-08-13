@@ -30,8 +30,14 @@ dev = [
     "ruff==0.7.4",
 ]
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+barn_eval = ["contracts/*.json", "judge/prompts/*/*.md"]
+
 [project.scripts]
-barn-eval = "src.cli:main"
+barn-eval = "barn_eval.cli:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

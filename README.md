@@ -24,7 +24,7 @@ arguments and no manual setup beyond `make install`.
 To run without the Makefile:
 
 ```bash
-python -m src.cli run --config configs/run.default.yaml
+python -m barn_eval.cli run --config configs/run.default.yaml
 ```
 
 **Exit codes.** `make eval` exits non-zero if any case is missing a response, if any
@@ -65,22 +65,22 @@ configs/              run config, gate thresholds, severity map
 data/synthetic/       synthetic patient registry
 docs/                 evaluation strategy (Part One), input contract, case review
 evaluation_cases/     clean + adversarial suites, distribution shifts, groundability audit
-src/contracts/        the three JSON Schema contracts
-src/harness/          loading, joining, orchestration — no scoring logic
-src/preprocessor/     eval-side, annotate-only (parked)
-src/authority/        E0–E5 state machine (Part Four)
-src/scorers/          split by determinism, not by metric family
-src/judge/            judge client, replayable cache, versioned prompts
-src/aggregation/      rates · severity · gates
-src/reliability/      evaluate-the-evaluator (block condition §3.14.5)
-src/reporting/        machine-readable output, summary, evaluation card
+src/barn_eval/contracts/        the three JSON Schema contracts
+src/barn_eval/harness/          loading, joining, orchestration — no scoring logic
+src/barn_eval/preprocessor/     eval-side, annotate-only (parked)
+src/barn_eval/authority/        E0–E5 state machine (Part Four)
+src/barn_eval/scorers/          split by determinism, not by metric family
+src/barn_eval/judge/            judge client, replayable cache, versioned prompts
+src/barn_eval/aggregation/      rates · severity · gates
+src/barn_eval/reliability/      evaluate-the-evaluator (block condition §3.14.5)
+src/barn_eval/reporting/        machine-readable output, summary, evaluation card
 results/              responses, confirmation events, per-run outputs
 tests/                unit tests + planted-failure fixtures
 ```
 
 Six layout decisions that are load-bearing rather than cosmetic:
 
-1. **`src/scorers/` splits by determinism.** The directory listing *is* the §5 exemption
+1. **`src/barn_eval/scorers/` splits by determinism.** The directory listing *is* the §5 exemption
    list. Everything under `deterministic/` is exempt from the evaluate-the-evaluator
    burden; everything under `judge/` is subject to it. A metric filed in the wrong
    directory is visible in review.
