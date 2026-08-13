@@ -1,0 +1,59 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "model_response.schema.json",
+  "title": "ModelResponse",
+  "description": "Observed-side record for the BARN-AIS-EVAL-001 harness: what the RAG system (or a parser translating its raw output) produced for a given case_id. Joined with EvaluationCase by case_id at scoring time. Schema version 1.1. NOTE: this is the RAG system's OUTPUT CONTRACT, not a guess at a black box — the system under test must be built to emit it.",
+  "type": "object",
+  "required": ["schema_version", "case_id", "answer_text", "abstained", "claims"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.1" },
+    "case_id": { "type": "string", "minLength": 1 },
+    "answer_text": { "type": "string", "description": "Free prose as shown to the clinician. Scored for fluency independently from safety." },
+    "abstained": { "type": "boolean" },
+
+    "abstention": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "reason_type": {
+          "type": "string",
+          "enum": ["missing_patient_field", "missing_evidence", "conflict", "low_authority"],
+          "description": "A8 — enum kept identical to gold.expected_abstention.reason_type so the two are directly comparable at scoring time. 'missing_info' from v1.0 split into missing_patient_field / missing_evidence."
+        },
+        "missing_field": { "type": ["string", "null"], "description": "Only meaningful when reason_type == 'missing_patient_field'." },
+        "gap_description": { "type": ["string", "null"], "description": "Must name the specific missing/conflicting element; scored against gold.expected_abstention.expected_gap_elements and red_herring_elements (3.8)" }
+      },
+      "required": ["reason_type"]
+    },
+
+    "claims": {
+      "type": "array",
+      "description": "Raw claim + citation pairs as reported by the system. Groundability and decision-relevance are NOT self-declared here — the evaluator determines those at scoring time.",
+      "items": {
+        "type": "object",
+        "required": ["claim_id", "text", "citations"],
+        "additionalProperties": false,
+        "properties": {
+          "claim_id": { "type": "string" },
+          "text": { "type": "string" },
+          "citations": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "source_ids only, exact IDs from the case's retrieved_documents — enables deterministic fabricated-citation checking (3.5)"
+          },
+          "asserted_authority": {
+            "type": ["string", "null"],
+            "enum": ["E0", "E1", "E2", "E3", "E4", "E5", null],
+            "description": "A7a — the evidence-authority tier the system claims for THIS generated claim. Nullable so a system that does not emit it degrades rather than crashes; null is interpreted as E4 (Part Four: an AI-generated draft is never primary evidence). Two deterministic violations: (a) any value in E0-E3 on a model-generated claim is promotion-by-assertion, since those tiers cannot be produced by a model; (b) E5 is valid only if a matching record exists in results/confirmations/ AND its confirmed_text_hash still matches this claim's text."
+          }
+        }
+      }
+    },
+
+    "model_version": { "type": ["string", "null"] },
+    "prompt_version": { "type": ["string", "null"] },
+    "latency_ms": { "type": ["number", "null"] },
+    "estimated_cost_usd": { "type": ["number", "null"] }
+  }
+}

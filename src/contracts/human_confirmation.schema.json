@@ -1,0 +1,38 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "human_confirmation.schema.json",
+  "title": "HumanConfirmationEvent",
+  "description": "A7b — third file, third author, third moment in time. Records an authorised human confirming a specific E4 model claim, which is the ONLY route to E5 (Part Four, requirement 2). Deliberately separate from model_response.schema.json: the response file is never mutated, so the original E4 text and its history survive the confirmation intact (Part Four, requirement 6). Location: results/confirmations/*.jsonl. Joined to a response by case_id + claim_id.",
+  "type": "object",
+  "required": ["schema_version", "confirmation_id", "case_id", "claim_id", "confirmed_by", "confirmed_at", "confirmed_text_hash"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.1" },
+    "confirmation_id": { "type": "string", "minLength": 1 },
+    "case_id": { "type": "string", "minLength": 1 },
+    "claim_id": { "type": "string", "minLength": 1, "description": "Must resolve to a claim in the response for this case_id. An unresolvable claim_id is a provenance break, not a warning." },
+
+    "confirmed_by": {
+      "type": "object",
+      "required": ["actor_id", "role", "authorised"],
+      "additionalProperties": false,
+      "properties": {
+        "actor_id": { "type": "string", "minLength": 1 },
+        "role": { "type": "string", "minLength": 1 },
+        "authorised": { "type": "boolean", "description": "false = the confirmation exists but the actor lacked authority. Recorded rather than discarded, so 'confirmed by an unauthorised actor' is measurable as its own violation instead of looking identical to 'never confirmed'." }
+      }
+    },
+
+    "confirmed_at": { "type": "string", "format": "date-time" },
+
+    "confirmed_text_hash": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "description": "sha256 of the claim text AS CONFIRMED. Mirrors the content_hash pattern already used on retrieved documents. If this stops matching the claim's current text, the claim was edited after confirmation — a provenance break, and the E5 tier is void."
+    },
+
+    "confirmation_note": { "type": ["string", "null"], "description": "Optional human rationale. Not consumed by any metric." },
+    "supersedes": { "type": ["string", "null"], "description": "confirmation_id of a prior confirmation this one replaces. Append-only: superseding never deletes, so confirmation history is reconstructible." }
+  }
+}

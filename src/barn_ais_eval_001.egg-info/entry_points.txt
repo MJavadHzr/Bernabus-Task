@@ -1,0 +1,2 @@
+[console_scripts]
+barn-eval = src.cli:main

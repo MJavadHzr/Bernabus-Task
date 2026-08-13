@@ -1,0 +1,117 @@
+{
+  "schema_version": "1.0",
+  "patients": [
+    {
+      "patient_id": "synth_001",
+      "display_name": "Patient A",
+      "age": 67,
+      "sex": "female",
+      "known_conditions": ["type 2 diabetes", "hypertension", "chronic kidney disease stage 3"],
+      "current_medications": ["metformin 1000mg BID", "lisinopril 20mg daily", "atorvastatin 40mg nightly"],
+      "allergies": ["penicillin (rash)"],
+      "baseline_labs": {"eGFR": "58 mL/min/1.73m2 (last known)", "HbA1c": "7.4%", "LDL": "98 mg/dL"},
+      "visit_history": [
+        {"date": "2026-01-04", "type": "routine labs", "summary": "Stable renal function, diabetes well-controlled."},
+        {"date": "2026-06-30", "type": "routine labs", "summary": "eGFR declined to 41; diabetes management reviewed."}
+      ]
+    },
+    {
+      "patient_id": "synth_002",
+      "display_name": "Patient B",
+      "age": 34,
+      "sex": "female",
+      "known_conditions": ["pregnancy (28 weeks, at time of most recent visit)", "gestational diabetes"],
+      "current_medications": ["prenatal vitamins", "insulin glargine 10 units nightly"],
+      "allergies": ["none known"],
+      "baseline_labs": {"fasting_glucose": "102 mg/dL", "blood_pressure": "118/76"},
+      "visit_history": [
+        {"date": "2026-05-02", "type": "prenatal visit", "summary": "Gestational diabetes diagnosed, diet counseling given."},
+        {"date": "2026-07-14", "type": "prenatal visit", "summary": "Glucose control improved with insulin."}
+      ]
+    },
+    {
+      "patient_id": "synth_003",
+      "display_name": "Patient C",
+      "age": 58,
+      "sex": "male",
+      "known_conditions": ["stage 2 colorectal cancer (post-resection)", "atrial fibrillation"],
+      "current_medications": ["apixaban 5mg BID", "metoprolol 50mg BID"],
+      "allergies": ["contrast dye (mild reaction)"],
+      "baseline_labs": {"CEA": "2.1 ng/mL (post-op baseline)", "INR": "n/a (on DOAC)"},
+      "visit_history": [
+        {"date": "2025-11-20", "type": "oncology follow-up", "summary": "Post-resection surveillance, no recurrence on imaging."},
+        {"date": "2026-05-18", "type": "oncology follow-up", "summary": "CEA stable, next surveillance imaging in 6 months."}
+      ]
+    },
+    {
+      "patient_id": "synth_004",
+      "display_name": "Patient D",
+      "age": 8,
+      "sex": "male",
+      "known_conditions": ["asthma (moderate persistent)"],
+      "current_medications": ["fluticasone inhaler BID", "albuterol PRN"],
+      "allergies": ["tree nuts (anaphylaxis)"],
+      "baseline_labs": {"peak_flow": "82% predicted"},
+      "visit_history": [
+        {"date": "2026-02-10", "type": "pediatric follow-up", "summary": "Asthma control acceptable, inhaler technique reviewed."},
+        {"date": "2026-07-01", "type": "urgent visit", "summary": "Mild exacerbation after viral illness, controller stepped up."}
+      ]
+    },
+    {
+      "patient_id": "synth_005",
+      "display_name": "Patient E",
+      "age": 81,
+      "sex": "female",
+      "known_conditions": ["heart failure with reduced ejection fraction", "osteoporosis", "mild cognitive impairment"],
+      "current_medications": ["furosemide 40mg daily", "sacubitril-valsartan 49/51mg BID", "alendronate weekly", "donepezil 5mg nightly"],
+      "allergies": ["sulfa drugs (hives)"],
+      "baseline_labs": {"ejection_fraction": "32%", "BNP": "410 pg/mL", "creatinine": "1.1 mg/dL"},
+      "visit_history": [
+        {"date": "2026-03-15", "type": "cardiology follow-up", "summary": "Stable HFrEF, medication doses optimized."},
+        {"date": "2026-06-22", "type": "cardiology follow-up", "summary": "Mild weight gain, diuretic adjusted."}
+      ]
+    },
+    {
+      "patient_id": "synth_006",
+      "display_name": "Patient F",
+      "age": 29,
+      "sex": "male",
+      "known_conditions": ["major depressive disorder", "generalized anxiety disorder"],
+      "current_medications": ["sertraline 100mg daily"],
+      "allergies": ["none known"],
+      "baseline_labs": {"PHQ-9": "9 (moderate, improving)", "GAD-7": "7 (mild)"},
+      "visit_history": [
+        {"date": "2026-04-05", "type": "psychiatry follow-up", "summary": "Mood improving on current dose, sleep still disrupted."},
+        {"date": "2026-07-20", "type": "psychiatry follow-up", "summary": "Endorses passive thoughts of self-harm without plan or intent; safety plan reviewed."}
+      ]
+    },
+    {
+      "patient_id": "synth_007",
+      "display_name": "Patient G",
+      "age": 45,
+      "sex": "male",
+      "known_conditions": ["post-op day 3, laparoscopic cholecystectomy"],
+      "current_medications": ["acetaminophen PRN", "oxycodone 5mg PRN (post-op)"],
+      "allergies": ["latex (contact dermatitis)"],
+      "baseline_labs": {"WBC": "9.8 x10^9/L (post-op day 3)", "temperature_trend": "afebrile since post-op day 1"},
+      "visit_history": [
+        {"date": "2026-08-01", "type": "surgery", "summary": "Uncomplicated laparoscopic cholecystectomy."},
+        {"date": "2026-08-04", "type": "post-op check", "summary": "Recovering as expected, incision sites clean."}
+      ]
+    },
+    {
+      "patient_id": "synth_008",
+      "display_name": "Patient H",
+      "age": 52,
+      "sex": "female",
+      "known_conditions": ["rheumatoid arthritis", "hypothyroidism"],
+      "current_medications": ["methotrexate 15mg weekly", "folic acid 1mg daily", "levothyroxine 75mcg daily"],
+      "allergies": ["none known"],
+      "baseline_labs": {"TSH": "2.1 mIU/L", "ESR": "22 mm/hr", "ALT": "28 U/L"},
+      "visit_history": [
+        {"date": "2026-02-28", "type": "rheumatology follow-up", "summary": "RA well-controlled, routine methotrexate labs stable."},
+        {"date": "2026-06-10", "type": "rheumatology follow-up", "summary": "Mild ALT elevation noted, repeat labs recommended."}
+      ]
+    }
+  ]
+}

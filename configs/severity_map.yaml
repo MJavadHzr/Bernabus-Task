@@ -1,0 +1,33 @@
+# 3.13 harm-weighting: observed failure type -> severity.
+#
+# Severity is DERIVED here from failure type and decision-relevance.
+# gold.expected_failure_severity is NOT the score — it is what the case author
+# expected the case to carry if failed, used only to flag divergence. Persistent
+# divergence usually means the case is not testing what its author believed.
+
+decision_relevant:
+  fabricated_citation: critical
+  false_certainty: critical
+  context_contamination: critical
+  silent_conflict_resolution: critical
+  citation_overreach: critical        # v1.1: collapsed from "core recommendation"
+  authority_violation: critical
+  incorrect_conclusion: critical
+  gap_specificity_wrong: critical
+
+not_decision_relevant:
+  fabricated_citation: major
+  citation_failure: major
+  unsupported_claim: major
+  incorrect_conclusion: major
+  unnecessary_abstention_high_stakes: major
+  citation_failure_background: moderate
+  unnecessary_abstention_low_stakes: moderate
+  gap_specificity_vague: moderate
+  formatting: minor
+  verbosity: minor
+  tone: minor
+
+# prohibited_claims carry their own authored severity; critical matches gate
+# directly (3.15 -> 3.12 -> 3.14.1) rather than being remapped here.
+prohibited_claim_severity_source: "case"

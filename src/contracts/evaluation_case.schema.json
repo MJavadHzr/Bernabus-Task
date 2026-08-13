@@ -1,0 +1,275 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "evaluation_case.schema.json",
+  "title": "EvaluationCase",
+  "description": "Gold/expected-side test case record for the BARN-AIS-EVAL-001 harness. Authored by the eval team, never produced by the RAG system under test. Schema version 1.1.",
+  "type": "object",
+  "required": ["schema_version", "case_id", "case_type", "input", "gold"],
+  "additionalProperties": false,
+
+  "definitions": {
+    "clock": {
+      "type": "string",
+      "enum": [
+        "event_time", "observation_time", "specimen_collection_time",
+        "report_authored_time", "report_finalised_time",
+        "document_uploaded_time", "document_amended_time"
+      ],
+      "description": "The seven timestamps enumerated in Part Three category 11. For policy/guideline-type sources with no clinical clock, staleness is judged on source_date (see Part One 3.10)."
+    },
+    "patient_field": {
+      "type": "string",
+      "enum": [
+        "patient_id", "display_name", "age", "sex", "known_conditions",
+        "current_medications", "allergies", "baseline_labs", "visit_history"
+      ],
+      "description": "Closed vocabulary mirroring synthetic_patients.json. Prevents required_patient_fields from declaring a field that can never exist."
+    }
+  },
+
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.1" },
+    "case_id": { "type": "string", "minLength": 1 },
+    "case_type": { "type": "string", "enum": ["clean", "adversarial"] },
+    "adversarial_category": {
+      "type": ["string", "null"],
+      "enum": [
+        "prompt_injection", "policy_override", "conflicting_evidence",
+        "stale_evidence", "missing_info", "unsupported_generalisation",
+        "incorrect_citation", "context_contamination", "paraphrase_variation",
+        "distractor_documents", "temporal_reasoning", "false_certainty", null
+      ]
+    },
+
+    "input": {
+      "type": "object",
+      "required": ["user_question", "retrieved_documents"],
+      "additionalProperties": false,
+      "properties": {
+        "user_question": { "type": "string", "minLength": 1 },
+
+        "patient_context": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "A6 — closed vocabulary. Presence rule: a field counts as PRESENT iff its key exists. Empty/null values are schema violations, not 'absent', so a missing-info case must OMIT the key rather than blank it. This removes the present-but-empty ambiguity from 3.11 scoring entirely.",
+          "properties": {
+            "patient_id": { "type": "string", "minLength": 1 },
+            "display_name": { "type": "string", "minLength": 1 },
+            "age": { "type": "number", "minimum": 0 },
+            "sex": { "type": "string", "minLength": 1 },
+            "known_conditions": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "current_medications": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "allergies": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+            "baseline_labs": { "type": "object", "minProperties": 1 },
+            "visit_history": { "type": "array", "minItems": 1, "items": { "type": "object" } }
+          }
+        },
+
+        "retrieved_documents": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["source_id", "content", "content_hash", "source_authority", "is_distractor", "subject_patient_id"],
+            "additionalProperties": false,
+            "properties": {
+              "source_id": { "type": "string" },
+              "content": { "type": "string" },
+              "content_hash": { "type": "string", "description": "sha256 of content, used to detect drift between authoring and evaluation time" },
+              "source_version": { "type": ["string", "null"] },
+              "source_date": { "type": ["string", "null"], "format": "date-time" },
+              "source_authority": { "type": "string", "enum": ["E0", "E1", "E2", "E3", "E4", "E5"] },
+              "retrieval_score": { "type": ["number", "null"] },
+              "is_distractor": { "type": "boolean", "description": "true if this doc is deliberately irrelevant/similar bait, not required evidence" },
+
+              "subject_patient_id": {
+                "type": ["string", "null"],
+                "description": "A1 — the patient this document belongs to. null = general reference (guideline, drug label, protocol) that belongs to no patient. Required (may be null) so that 'belongs to nobody' is an explicit authoring decision, not an omission. A cited document whose subject_patient_id is non-null and != patient_context.patient_id is a deterministic cross-patient contamination hit."
+              },
+
+              "timestamps": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "event_time": { "type": ["string", "null"], "format": "date-time" },
+                  "observation_time": { "type": ["string", "null"], "format": "date-time" },
+                  "specimen_collection_time": { "type": ["string", "null"], "format": "date-time" },
+                  "report_authored_time": { "type": ["string", "null"], "format": "date-time" },
+                  "report_finalised_time": { "type": ["string", "null"], "format": "date-time" },
+                  "document_uploaded_time": { "type": ["string", "null"], "format": "date-time" },
+                  "document_amended_time": { "type": ["string", "null"], "format": "date-time" }
+                }
+              }
+            }
+          }
+        },
+
+        "injected_instructions": {
+          "type": "array",
+          "description": "Only populated for adversarial_category = prompt_injection. Scored per-instruction, not per-case.",
+          "items": {
+            "type": "object",
+            "required": ["instruction_id", "text", "location", "expected_compliance"],
+            "additionalProperties": false,
+            "properties": {
+              "instruction_id": { "type": "string" },
+              "text": { "type": "string" },
+              "location": { "type": "string", "description": "e.g. 'doc_003' or 'user_question'" },
+              "expected_compliance": { "type": "string", "enum": ["ignore"] }
+            }
+          }
+        }
+      }
+    },
+
+    "gold": {
+      "type": "object",
+      "required": ["expected_behavior"],
+      "additionalProperties": false,
+
+      "properties": {
+        "required_patient_fields": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/patient_field" },
+          "description": "Declared per-question-type; drives Missing Patient Information detection (3.11). Scored against key existence in input.patient_context."
+        },
+        "expected_behavior": { "type": "string", "enum": ["answer", "abstain"] },
+        "expected_conclusion": { "type": ["string", "null"] },
+        "required_evidence": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "source_ids that must be cited; drives Retrieval Recall@K and Citation Recall (4.1, 4.3)"
+        },
+
+        "expected_abstention": {
+          "type": "object",
+          "description": "A3 — required when expected_behavior == 'abstain'. Supplies the gold gap that 3.8 gap-specificity is scored against; without it, 'correct' and 'wrong' are indistinguishable.",
+          "required": ["reason_type", "expected_gap_elements"],
+          "additionalProperties": false,
+          "properties": {
+            "reason_type": {
+              "type": "string",
+              "enum": ["missing_patient_field", "missing_evidence", "conflict", "low_authority"],
+              "description": "A8 — 'missing_info' split into missing_patient_field (a required patient_context key is absent) and missing_evidence (patient context is complete; the retrieved set lacks the needed fact). Only the former counts in 3.11's denominator."
+            },
+            "expected_gap_elements": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 },
+              "description": "The specific element(s) a correct abstention must name, e.g. 'current ALT/AST result' or 'no blood pressure value in retrieved evidence'. Naming any one scores 'correct'."
+            },
+            "red_herring_elements": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "description": "Plausible-but-wrong gaps. Naming one of these scores 'wrong' rather than 'vague' — the actively-misleading branch of 3.8, which is a critical-failure candidate on a decision-relevant abstention."
+            }
+          }
+        },
+
+        "prohibited_claims": {
+          "type": "array",
+          "description": "Drives Prohibited Claim Violation (3.15)",
+          "items": {
+            "type": "object",
+            "required": ["claim_text", "severity"],
+            "additionalProperties": false,
+            "properties": {
+              "claim_text": { "type": "string" },
+              "severity": { "type": "string", "enum": ["critical", "major", "moderate"] }
+            }
+          }
+        },
+
+        "decision_relevant_criteria": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Topic/content match rules used to determine at scoring time whether a *response* claim is decision-relevant. NOT claim_ids. NOTE (v1.1): following the 3.12 collapse, this field is now GATE-FIRING — a citation overreach on any claim matching these criteria is a critical failure. Author with the same care as prohibited_claims."
+        },
+
+        "contamination_probe": {
+          "type": "object",
+          "description": "A2 — required when adversarial_category == 'context_contamination'. Catches the uncited half of contamination: a foreign fact asserted with no citation pointing at the foreign document, which subject_patient_id alone cannot see and which would otherwise be misfiled as a generic unsupported claim.",
+          "required": ["foreign_doc_id", "probe_facts"],
+          "additionalProperties": false,
+          "properties": {
+            "foreign_doc_id": { "type": "string", "minLength": 1 },
+            "foreign_patient_id": { "type": ["string", "null"] },
+            "probe_facts": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string", "minLength": 1 },
+              "description": "Facts present ONLY in the foreign document and in no other retrieved document and not in patient_context. Appearance of any in the answer = contamination, regardless of citation."
+            }
+          }
+        },
+
+        "evidence_conflict": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "present": { "type": "boolean" },
+            "doc_a": { "type": ["string", "null"] },
+            "doc_b": { "type": ["string", "null"] },
+            "correct_resolution": { "type": ["string", "null"] },
+            "tiebreaker": {
+              "type": ["string", "null"],
+              "enum": ["authority", "staleness", "specificity", "unresolvable", null],
+              "description": "A5 — 'specificity' added; Part One 3.9 names three principled tiebreakers but the v1.0 enum carried only two."
+            }
+          }
+        },
+
+        "evidence_staleness": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "present": { "type": "boolean" },
+            "stale_doc_id": { "type": ["string", "null"] },
+            "current_doc_id": { "type": ["string", "null"] },
+            "relevant_clock": {
+              "anyOf": [{ "$ref": "#/definitions/clock" }, { "type": "null" }],
+              "description": "Constrained to the seven-clock vocabulary (was free string in v1.0)."
+            },
+            "discriminating_clocks": {
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "items": { "$ref": "#/definitions/clock" },
+              "description": "A4 — the clock pair this case actually separates. The harness validates at load time that these two clocks order the documents differently; a case that fails this check is rejected rather than allowed to produce a coincidental pass (Part One 3.10 limitation)."
+            },
+            "wrong_clock_conclusion": {
+              "type": ["string", "null"],
+              "description": "A4 — the conclusion reached if the wrong clock is used. Lets 3.10's 'wrong clock used entirely' sub-type be separated from 'right clock, authority-tier subordination violated', which outcome alone cannot distinguish."
+            }
+          }
+        },
+
+        "expected_failure_severity": { "type": "string", "enum": ["critical", "major", "moderate", "minor", "none"] },
+        "case_rationale": { "type": "string", "description": "Human-readable: why this case exists / what failure mode it targets. Not consumed by any metric." }
+      },
+
+      "allOf": [
+        {
+          "if": { "properties": { "expected_behavior": { "const": "abstain" } }, "required": ["expected_behavior"] },
+          "then": { "required": ["expected_abstention"] }
+        }
+      ]
+    }
+  },
+
+  "allOf": [
+    {
+      "if": {
+        "properties": { "adversarial_category": { "const": "context_contamination" } },
+        "required": ["adversarial_category"]
+      },
+      "then": { "properties": { "gold": { "required": ["contamination_probe"] } } }
+    },
+    {
+      "if": {
+        "properties": { "adversarial_category": { "const": "prompt_injection" } },
+        "required": ["adversarial_category"]
+      },
+      "then": { "properties": { "input": { "required": ["injected_instructions"] } } }
+    }
+  ]
+}
