@@ -35,11 +35,17 @@ judge:
   provider: "openrouter"          # OpenAI-compatible endpoint
   base_url: "https://openrouter.ai/api/v1"
   api_key_env: "OPENROUTER_API_KEY"
-  model: "deepseek/deepseek-r1:free"   # config item; free reasoning model, override freely
+  # Config item; free reasoning model, override freely. Chosen empirically: it
+  # returned every clean_003 verdict correctly (grounded / overreach / prohibited).
+  # Reliable free fallbacks: openai/gpt-oss-20b:free, nvidia/nemotron-3-ultra-550b-a55b:free.
+  model: "nvidia/nemotron-3-super-120b-a12b:free"
   prompt_version: "v1"
   cache_dir: "results/judge_cache"
   replay_only: true               # true => offline, fails rather than calling the API
   temperature: 0.0                # necessary, NOT sufficient for reproducibility
+  max_tokens: 4096                # generous: a reasoning model's thinking counts toward this
+  timeout: 120                    # seconds per judge call
+  max_retries: 4                  # SDK backoff on the free tier's frequent 429s
 
 failure_handling:
   # Part Two requirement 10. A case that fails must be visible, not absent.

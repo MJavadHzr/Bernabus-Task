@@ -22,7 +22,11 @@ dependencies = [
 
 [project.optional-dependencies]
 judge = [
-    "anthropic==0.39.0",    # LLM judge; unused when replaying a committed cache
+    # OpenRouter is OpenAI-compatible, so the judge talks to it through the OpenAI
+    # SDK (base_url = https://openrouter.ai/api/v1). The SDK buys automatic
+    # retry/backoff on the free tier's frequent 429s, typed errors and connection
+    # pooling across the many per-claim calls. Unused when replaying a committed cache.
+    "openai>=1.40,<4",
 ]
 dev = [
     "pytest==8.3.3",
