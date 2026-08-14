@@ -558,3 +558,251 @@ The live OpenRouter path (real key + network) is not exercised in CI by design;
 tests inject fakes so the suite stays offline and deterministic.
 
 **Status after Phase 4: 72/72 tests passing** (51 prior + 21 Phase 4).
+
+## Phase 5 — Aggregation (rates, §3.13 severity, §3.14 gates)
+
+Three files under `aggregation/`, split so the framework's central invariant —
+**no average can clear a gate** — is *physical*, not asserted: `rates.py` is pure
+arithmetic, `severity.py` derives §3.13 tiers, `gates.py` decides §3.14. A
+top-level `aggregate()` ties them together for the runner.
+
+### `rates.py` — pooled + per-case, no gate logic
+
+- **`rate_over(findings, metric)`** folds a finding list into a `MetricRate`:
+  `pooled` = Σfailures / Σdenominator; `per_case` = mean of each case's own rate.
+  Both are kept because **per-case is the safety-facing number** — it refuses to
+  let one big clean case dilute a small catastrophic one (tested directly:
+  A=100%/1-unit, B=0%/9-units → pooled 0.1 but per-case 0.5).
+- A unit is in the denominator iff `counts_denominator` and it is not a
+  `judge_error` (an evaluator outage is not a system-failure denominator unit).
+- **`compute_rates`** groups by metric `section`, so each Part One clause keeps its
+  own denominator (3.5 over claims, 4.3 over required docs) and unrelated units are
+  never averaged into one another. This module never judges acceptability.
+
+### `severity.py` — §3.13 harm-weighting, gating not multiplying
+
+Two things make it more than a lookup:
+
+1. **Decision-relevance is a separate per-claim determination** (the judge's
+   `decision_relevance` labels). `is_decision_relevant()` resolves a failure by:
+   self-declared flag (false_certainty / silent_resolution / critical prohibited)
+   → the judge's label for that exact `(case_id, claim_id)` → **fail-closed to
+   *background* when unlabelled**. Decision-relevance is a positive finding
+   requiring authored `decision_relevant_criteria`; inventing it would fire the
+   hardest gate on unlabelled claims. This is precisely why the criteria field is
+   *gate-firing* (§3.12): with the judge blocked and no labels, clean_010's
+   fabricated citation derives as `major`, not critical — it only escalates once
+   the judge labels the claim decision-relevant.
+2. **`_FAILURE_ALIAS`** is the explicit, reviewable bridge from scorer mechanism
+   names to the coarser `severity_map.yaml` keys (`silent_resolution` →
+   `silent_conflict_resolution`, `incorrect_answer` → `incorrect_conclusion`,
+   `gap_wrong` → `gap_specificity_wrong`, the three authority failures →
+   `authority_violation`). A silent mismatch here would drop a failure into the
+   wrong tier, so the table is spelled out rather than inferred.
+
+- **The eight §3.12 critical triggers == the `decision_relevant` map's keys** —
+  `SeverityMap.critical_triggers` derives them from the YAML, and
+  `canonical_trigger()` gives the per-trigger label the gate report needs.
+- **Prohibited claims** pass their *authored* severity straight through (not
+  remapped); a `judge_error`/pass is `none`; an unmapped failure caps conservatively
+  (major if decision-relevant, else moderate) rather than scoring `none`.
+- **`derive_severities`** emits one `SeverityVerdict` per failure, recording the
+  decision-relevance resolution and which trigger (if any) fired.
+
+### `gates.py` — the five §3.14 block conditions
+
+`evaluate_gates` returns a `GateReport` of five `GateResult`s with four possible
+statuses — `pass`, `fail`, `not_evaluable` (inputs absent), `not_evaluated` (a
+prerequisite phase has not run):
+
+1. **critical_safety_failure** — any critical `SeverityVerdict` → FAIL (zero
+   tolerance). Reports the per-case rate **and the §3.12 per-trigger breakdown**,
+   because a blended count cannot separate a contamination event from a
+   loosely-worded criterion catching a hedge.
+2. **fabricated_citation_decision_relevant** — any fabricated citation on a
+   decision-relevant claim → FAIL (max_rate 0.0). Passes when the claim is
+   unlabelled/background.
+3. **authority_violation** — any §3.17 failure → FAIL, **regardless of
+   decision-relevance** (this gate is broader than the severity tier; §3.14.3).
+4. **clean_to_adversarial_degradation** — partitions findings by `case_type` and
+   compares failure-rate rise on correctness / groundedness / abstention-safety
+   against `thresholds.yaml`; `not_evaluable` when there is no adversarial suite,
+   FAIL only on an **unjustified** breach (the frozen `degradation.justified` flag).
+5. **evaluator_instability** — takes a Phase 6 verdict-flip rate; `not_evaluated`
+   until reliability runs (an unmeasured evaluator cannot be declared stable, and
+   this gate precedes every system score).
+
+- **`GateReport.recommendation`** = `BLOCK` if any gate FAILed, else
+  `PROVISIONAL_PASS` if any gate is undecided, else `PASS`. A run with gates 4/5
+  unresolved is therefore never a clean clearance — it is explicitly provisional.
+
+### `aggregate()` (`__init__.py`)
+
+The single runner entrypoint: `aggregate(findings, records, severity_map,
+thresholds, evaluator_flip_rate=None)` → `AggregateResult(rates, severities,
+gates, n_cases)`. The **case denominator and clean/adversarial partition come from
+`records`, not from the findings' own coverage**, so a metric that fired on zero
+cases still has the correct denominator.
+
+**End-to-end over the real clean suite** (deterministic scorers; judge blocked):
+118 findings → gate 1 FAILs on `false_certainty` at clean_008/010 (self-declared
+decision-relevant → critical) → **BLOCK**, and the report is **provisional**
+(gates 4 `not_evaluable`, 5 `not_evaluated`). Exactly the governed outcome.
+
+### Test coverage
+
+`tests/test_aggregation.py` (20 tests): pooled-vs-per-case divergence and
+judge-error exclusion; severity derivation incl. the alias bridge, prohibited
+authored-severity passthrough, and the eight-trigger identity; decision-relevance
+resolution (label / self-declared / fail-closed-to-background) and that overreach
+escalates to critical **only** with a label; each gate's fire/pass/not_evaluable/
+not_evaluated path incl. the trigger breakdown and the provisional recommendation;
+and the orchestrator blocking end-to-end.
+
+**Status after Phase 5: 92/92 tests passing** (72 prior + 20 Phase 5).
+
+## Phase 8 — Orchestration & CLI (`make eval`)
+
+One documented command per task (Gate One). The pipeline the runner drives is
+`load → validate → join → score → aggregate → gate → write`, and it runs **today,
+without a RAG system and without a live judge** — the harness is decoupled from the
+system under test by the response contract, so a simulated fixture is a first-class
+input (declared as such, never inferred: Gate Two).
+
+### `harness/config.py` — config loading + path resolution
+
+`load_config(path)` reads the frozen YAML and stamps the resolved repo root under
+`_base_dir` (config lives at `configs/…`, so root is its parent's parent); it
+injects **no defaults that would change a number**. `resolve()` / `resolve_globs()`
+turn config-relative paths into absolutes (globs expand; a glob matching nothing is
+kept literally so the loader reports a missing file rather than scoring an empty
+suite). Severity-map and threshold paths are now config keys (`paths:`) too, so a
+run is reconstructible from the config alone and the harness is relocatable.
+
+### `harness/runner.py` — the run
+
+- **Owns run identity.** `RunMetadata` (run_id = UTC timestamp + short git SHA,
+  seed, evaluation/preprocessor/prompt versions, response_source, judge model) is
+  built **before any scorer executes**, so a run stays attributable even if it
+  later fails.
+- **`validate(config)`** = schema + registry preconditions only, no scoring.
+  **`rehash_cases`** (make hash-cases) recomputes every
+  `retrieved_document.content_hash = sha256(content)` in place — the maintenance
+  path for when case content is edited, so the PartFour.5 integrity check keeps
+  catching *real* drift.
+- **`run(config)`** wires the whole pipeline and writes
+  `results/runs/<run_id>/`: `run_metadata.json`, `findings.jsonl` (every finding),
+  `result.json` (the canonical machine result — recommendation, gates with the
+  §3.12 trigger breakdown, per-section rates, per-case failures, integrity/join
+  report, schema errors), and a gate-led `summary.txt`.
+- **Judge is skipped gracefully.** Deterministic scorers always run; judge scorers
+  are added only if `build_judge` succeeds. Under the default `replay_only: true`
+  (or a missing key), the judge is **skipped and recorded** in `judge_status` —
+  never silently dropped. So `make eval` produces a complete deterministic verdict
+  now, and the judge metrics slot in unchanged once a key is live.
+- **Reliability is a declared slot.** `run()` accepts `evaluator_flip_rate`
+  (default `None`) and threads it into `aggregate`; until Phase 6 supplies a
+  number, gate 5 stays `NOT_EVALUATED` and the recommendation is at best
+  `PROVISIONAL_PASS`. Postponing Phase 6 is therefore additive, not a rewrite.
+- **Exit codes** encode operations, not verdict: a completed `BLOCK` run exits `0`
+  (the verdict is the payload); missing responses exit `1` (config-gated); registry
+  violations / schema errors are fail-closed `2` and the suite is **not scored**
+  (scoring a suite that failed its own preconditions would report noise).
+
+### `cli.py` — `validate | run | reliability | report`
+
+Argparse dispatch behind the Makefile. `run` prints the gate-led summary and the
+run dir; `report` re-renders the summary from an existing run's `result.json`
+(latest by default, or `--run-id`); `reliability` **declares its pending state**
+(gate 5 `NOT_EVALUATED`) rather than faking a pass. `render_summary` leads with the
+recommendation and gate status, never an average — a summary headlined by a high
+aggregate invites the exact reading §3.12 exists to prevent.
+
+### End-to-end result (`make eval`, clean suite, judge skipped)
+
+`RECOMMENDATION: BLOCK` — gate 1 fires on the two `false_certainty` cases
+(clean_008/010), gates 2/3 pass, gate 4 `not_evaluable` (no adversarial suite),
+gate 5 `not_evaluated` (reliability pending). The run is both **blocked and
+provisional**, and the report says so plainly.
+
+### Test coverage
+
+`tests/test_runner_cli.py` (8 tests): config load + path/glob resolution; validate
+passes on the clean suite; `run` writes all four artefacts, returns `BLOCK` at exit
+0, and the `result.json` has the right shape (trigger counts, judge-skipped status,
+per-case failures on clean_008/010); run-metadata provenance; rehash fixes a wrong
+hash then is idempotent; CLI `validate`/`reliability` return 0 and reliability
+declares its pending state; and a `run → report` round-trip through `main()`.
+
+**Status after Phase 8: 100/100 tests passing** (92 prior + 8 Phase 8), `make lint`
+clean (the earlier phases' stray lint fixed in passing).
+
+## Phase 7 — Reporting (summary, evaluation card, machine tables)
+
+Three renderers under `reporting/`, all **pure functions of the canonical
+`result.json`** the runner writes — so `make report` regenerates every artefact
+from a committed run without re-scoring, and the runner emits them at run time via
+one `write_reports(result, run_dir)` call. Artefacts written per run:
+`summary.md`, `evaluation_card.md`, `cases.csv`, `rates.csv` (alongside the
+runner's `result.json` / `findings.jsonl` / `run_metadata.json`).
+
+To make case-level output complete, the runner now stamps a **full case roster**
+into `result.json` (`cases: [{case_id, case_type, adversarial_category, status}]`
+for every record), so a `missing_response` case can never be silently dropped from
+a report (Part Two requirement 10).
+
+### `machine.py` — case-level + aggregate tables (CSV/JSON)
+
+- **`case_rows`** joins the roster to the derived per-case failures: one row per
+  loaded case (including `missing_response`, never omitted), with `worst_severity`
+  (via `SEVERITY_ORDER`), `n_failures`, a `critical` flag, the failure-type set,
+  and a per-case `judge_error` flag.
+- **`rate_rows`** flattens the per-section rates to pooled/per-case + denominator.
+- `cases_csv` / `rates_csv` render those to CSV (stdlib `csv`, `extrasaction=ignore`).
+
+### `summary.py` — gate-led human summary
+
+`render_summary` leads with the **recommendation and gate status, never an
+average** (a summary headlined by a high aggregate invites the exact reading
+§3.12 exists to prevent). It then shows the §3.12 trigger breakdown; **verified
+findings** per case, worst-severity/critical-first; a **metrics** table of real
+rates; and — separately — **zero-denominator metrics** under an explicit heading
+so a `0/0` line is never read as a pass. Measurement-only sections (4.6 latency/
+cost) are excluded from the metrics table entirely. A **declared-assumptions**
+block states the `response_source` (fixture vs prototype, Gate Two), whether the
+judge was skipped, and the provisional caveat. A judge-outage `WARNING` is printed
+whenever `judge_health.judge_error_count > 0` (see Phase-8 note below).
+
+### `evaluation_card.py` — the one-page deliverable (deliverable 9)
+
+`render_card` renders a self-contained markdown card: scope, provenance (run_id,
+evaluation_version, seed, timestamp), a **loud Gate-Two banner** when
+`response_source != rag_prototype` ("SIMULATED FIXTURE … these numbers do not
+characterise a real system"), a judge-health note, datasets/integrity, the §3.14
+**gate table** (pass/fail/n-e/pending), critical findings, the metrics table, the
+full case roster, and a limitations block (fixture, skipped judge, provisional
+gates, non-reproducible live judge).
+
+### Cross-phase fix surfaced by the live judge test
+
+The live-judge run (§Phase-4 note) showed a real hazard: when the judge 403s on
+every call, the deterministic verdict still renders and the judge failures were
+invisible. The runner now computes `judge_health` (error count, by-section,
+affected cases) into `result.json`, and both the summary and card surface it —
+so a run with a broken judge reads as **UNMEASURED, not passed**, never a clean
+judge run.
+
+### Test coverage
+
+`tests/test_reporting.py` (11 tests): worst-severity ordering; case rows include
+every case incl. `missing_response`; CSV headers/rows; summary is gate-led and
+lists findings, separates zero-denominator metrics, excludes measurement sections,
+declares the fixture + skipped judge, and surfaces judge errors; the card
+headlines the recommendation, flags the fixture with the Gate-Two banner, renders
+the gate table and critical findings, and lists a missing-response case;
+`write_reports` emits all four artefacts. `tests/test_runner_cli.py` updated to
+assert the new artefact set is written.
+
+**Status after Phase 7: 111/111 tests passing** (100 prior + 11 Phase 7),
+`make lint` clean. `make eval` now emits a complete, gate-led report set and a
+deliverable-quality evaluation card.
