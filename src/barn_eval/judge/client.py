@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 from dataclasses import dataclass, field
 from functools import lru_cache
 from pathlib import Path
@@ -113,6 +114,10 @@ class Judge:
     # on OpenRouter, so too low a cap truncates the run before the JSON verdict.
     max_tokens: int = 4096
     max_retries: int = 4
+    # Minimum seconds between the START of consecutive calls. 0 = no throttle
+    # (the SDK still backs off on 429). Set > 0 to be a courteous client on a free
+    # tier and stay comfortably under its per-minute rate limit.
+    request_interval: float = 0.0
     extra_headers: dict[str, str] = field(
         default_factory=lambda: {
             # Optional OpenRouter attribution headers; harmless if ignored.
@@ -121,9 +126,11 @@ class Judge:
         }
     )
     _client: object = field(default=None, init=False, repr=False, compare=False)
+    _last_call: float = field(default=0.0, init=False, repr=False, compare=False)
 
     def __call__(self, prompt_name: str, payload: dict) -> JudgeVerdict:
         system = load_prompt(prompt_name, self.prompt_version)
+        self._throttle()
         content = self._complete(system, json.dumps(payload, ensure_ascii=False, sort_keys=True))
         return JudgeVerdict(
             data=_extract_json(content),
@@ -134,6 +141,16 @@ class Judge:
         )
 
     # -- transport (OpenAI SDK -> OpenRouter) --------------------------------
+    def _throttle(self) -> None:
+        """Space calls at least `request_interval` seconds apart (courtesy on a
+        free tier). No-op when the interval is 0."""
+        if self.request_interval <= 0:
+            return
+        wait = self.request_interval - (time.monotonic() - self._last_call)
+        if wait > 0:
+            time.sleep(wait)
+        self._last_call = time.monotonic()
+
     def _api_key(self) -> str:
         key = os.environ.get(self.api_key_env)
         if not key:
@@ -219,6 +236,8 @@ def build_judge(judge_cfg: dict) -> Judge:
         kwargs["timeout"] = float(judge_cfg["timeout"])
     if judge_cfg.get("max_retries") is not None:
         kwargs["max_retries"] = int(judge_cfg["max_retries"])
+    if judge_cfg.get("request_interval") is not None:
+        kwargs["request_interval"] = float(judge_cfg["request_interval"])
     return Judge(**kwargs)
 
 
@@ -235,7 +254,7 @@ def judge(prompt_name: str, payload: dict, prompt_version: str = "v1") -> JudgeV
     global _DEFAULT_JUDGE
     if _DEFAULT_JUDGE is None or _DEFAULT_JUDGE.prompt_version != prompt_version:
         _DEFAULT_JUDGE = Judge(
-            model=os.environ.get("OPENROUTER_MODEL", "nvidia/nemotron-3-super-120b-a12b:free"),
+            model=os.environ.get("OPENROUTER_MODEL", "openai/gpt-oss-20b:free"),
             prompt_version=prompt_version,
         )
     return _DEFAULT_JUDGE(prompt_name, payload)

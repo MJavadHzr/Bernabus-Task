@@ -18,6 +18,12 @@ data:
   confirmations: "results/confirmations/"
   groundability_audit: "evaluation_cases/groundability_audit.jsonl"
 
+# Scoring config files (severity map + gate thresholds). Kept as explicit paths so
+# a run is reconstructible from this file alone and the harness is relocatable.
+paths:
+  severity_map: "configs/severity_map.yaml"
+  thresholds: "configs/thresholds.yaml"
+
 # Declared, never inferred. Gate Two: a figure from a fixture must never be
 # reported as a figure from the system under test.
 response_source: "simulated_fixture"   # simulated_fixture | rag_prototype
@@ -35,10 +41,10 @@ judge:
   provider: "openrouter"          # OpenAI-compatible endpoint
   base_url: "https://openrouter.ai/api/v1"
   api_key_env: "OPENROUTER_API_KEY"
-  # Config item; free reasoning model, override freely. Chosen empirically: it
-  # returned every clean_003 verdict correctly (grounded / overreach / prohibited).
-  # Reliable free fallbacks: openai/gpt-oss-20b:free, nvidia/nemotron-3-ultra-550b-a55b:free.
-  model: "nvidia/nemotron-3-super-120b-a12b:free"
+  # Config item; free model, override freely. Chosen empirically (smallest/fastest
+  # that returned every clean_003 verdict correctly: grounded / overreach / prohibited).
+  # Heavier free fallbacks: nvidia/nemotron-3-super-120b-a12b:free, nvidia/nemotron-3-ultra-550b-a55b:free.
+  model: "openai/gpt-oss-20b:free"
   prompt_version: "v1"
   cache_dir: "results/judge_cache"
   replay_only: true               # true => offline, fails rather than calling the API
@@ -46,6 +52,7 @@ judge:
   max_tokens: 4096                # generous: a reasoning model's thinking counts toward this
   timeout: 120                    # seconds per judge call
   max_retries: 4                  # SDK backoff on the free tier's frequent 429s
+  request_interval: 1.0           # min seconds between calls: courteous on the free tier
 
 failure_handling:
   # Part Two requirement 10. A case that fails must be visible, not absent.
