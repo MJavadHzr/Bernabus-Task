@@ -14,7 +14,7 @@ The report must keep construction evidence and measurement evidence apart
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, replace
 from typing import Optional, Union
 
 from .confirmation import validate_confirmation

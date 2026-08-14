@@ -44,7 +44,7 @@ def test_planted_fixture_is_not_read_by_scorers():
     # The oracle exists and is eval-side only; scorers never open it.
     planted = ROOT / "tests/fixtures/planted_failures.jsonl"
     assert planted.exists()
-    ids = {json.loads(l)["case_id"] for l in planted.read_text().splitlines() if l.strip()}
+    ids = {json.loads(line)["case_id"] for line in planted.read_text().splitlines() if line.strip()}
     assert ids == {"clean_003", "clean_008", "clean_010"}
 
 

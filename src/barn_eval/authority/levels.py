@@ -11,7 +11,7 @@
 from __future__ import annotations
 
 from enum import IntEnum
-from typing import Optional, Union
+from typing import Union
 
 
 class AuthorityLevel(IntEnum):
