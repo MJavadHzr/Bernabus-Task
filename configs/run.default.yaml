@@ -32,7 +32,10 @@ retrieval:
 
 judge:
   enabled: true
-  model: "claude-sonnet-4-6"
+  provider: "openrouter"          # OpenAI-compatible endpoint
+  base_url: "https://openrouter.ai/api/v1"
+  api_key_env: "OPENROUTER_API_KEY"
+  model: "deepseek/deepseek-r1:free"   # config item; free reasoning model, override freely
   prompt_version: "v1"
   cache_dir: "results/judge_cache"
   replay_only: true               # true => offline, fails rather than calling the API
