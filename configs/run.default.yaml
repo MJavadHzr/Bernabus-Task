@@ -1,0 +1,63 @@
+# Default run configuration. Everything that could change a number lives here or
+# in thresholds.yaml, so a run is reconstructible from config + git SHA alone.
+
+run:
+  seed: 20260813
+  evaluation_version: "1.1.0"      # bumps on ANY change to scoring or preprocessor
+  preprocessor_version: null        # parked; null until implemented
+  experiment_id: "baseline_clean"
+  output_dir: "results/runs"
+
+data:
+  patients: "data/synthetic/synthetic_patients.json"
+  cases:
+    - "evaluation_cases/clean.jsonl"
+    # - "evaluation_cases/adversarial.jsonl"      # Part Three
+    # - "evaluation_cases/shifted/*.jsonl"        # Part Seven, run separately
+  responses: "results/responses/simulated_v1.jsonl"
+  confirmations: "results/confirmations/"
+  groundability_audit: "evaluation_cases/groundability_audit.jsonl"
+
+# Scoring config files (severity map + gate thresholds). Kept as explicit paths so
+# a run is reconstructible from this file alone and the harness is relocatable.
+paths:
+  severity_map: "configs/severity_map.yaml"
+  thresholds: "configs/thresholds.yaml"
+
+# Declared, never inferred. Gate Two: a figure from a fixture must never be
+# reported as a figure from the system under test.
+response_source: "simulated_fixture"   # simulated_fixture | rag_prototype
+response_source_version: "v1"
+
+retrieval:
+  # 4.1. K is pinned to the retrieved-set size because the prototype receives its
+  # documents rather than retrieving them; there is no larger corpus to cut at K.
+  k: "retrieved_set_size"
+  ordering_policy: "score"        # score | array_order
+  warn_on_null_score: true        # null retrieval_score => array_order + warning
+
+judge:
+  enabled: true
+  provider: "openrouter"          # OpenAI-compatible endpoint
+  base_url: "https://openrouter.ai/api/v1"
+  api_key_env: "OPENROUTER_API_KEY"
+  # Config item; free model, override freely. Chosen empirically (smallest/fastest
+  # that returned every clean_003 verdict correctly: grounded / overreach / prohibited).
+  # Heavier free fallbacks: nvidia/nemotron-3-super-120b-a12b:free, nvidia/nemotron-3-ultra-550b-a55b:free.
+  # model: "openai/gpt-oss-20b:free"
+  model: "nvidia/nemotron-3.5-lightning:free"
+  prompt_version: "v1"
+  cache_dir: "results/judge_cache"
+  replay_only: true               # true => offline, fails rather than calling the API
+  temperature: 0.0                # necessary, NOT sufficient for reproducibility
+  max_tokens: 4096                # generous: a reasoning model's thinking counts toward this
+  timeout: 120                    # seconds per judge call
+  max_retries: 4                  # SDK backoff on the free tier's frequent 429s
+  request_interval: 1.0           # min seconds between calls: courteous on the free tier
+
+failure_handling:
+  # Part Two requirement 10. A case that fails must be visible, not absent.
+  on_missing_response: "record"   # status=missing_response, stays in denominator
+  on_load_error: "record"
+  exit_nonzero_on_missing: true
+  silently_drop_cases: false      # never true; present so the choice is explicit
