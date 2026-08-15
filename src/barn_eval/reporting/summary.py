@@ -23,8 +23,8 @@ def _judge_health_line(result: dict) -> list[str]:
     if not n:
         return []
     return [
-        f"WARNING: {n} judge call(s) FAILED on {len(jh.get('affected_cases', []))} case(s) "
-        f"{jh.get('by_section', {})} — those judge-side metrics are UNMEASURED, not passed."
+        f"\nWARNING: {n} judge call(s) FAILED on {len(jh.get('affected_cases', []))} case(s) "
+        f"{jh.get('by_section', {})} — those judge-side metrics are UNMEASURED, not passed.\n"
     ]
 
 
@@ -33,10 +33,12 @@ def render_summary(result: dict) -> str:
     g = result["gates"]
     integ = result["integrity"]
     lines = [
+        "="*15,
         f"RECOMMENDATION: {result['recommendation']}",
-        f"response_source: {result['response_source']} ({result.get('response_source_version')})   "
-        f"judge: {result.get('judge_status')}",
-        f"cases: {result['n_cases']}   missing_response: {len(integ['missing_response'])}",
+        f"\t- response_source:\t{result['response_source']} ({result.get('response_source_version')})",
+        f"\t- judge:\t\t{result.get('judge_status')}",
+        f"\t- cases:\t\t{result['n_cases']}",
+        f"\t- missing_response:\t{len(integ['missing_response'])}",
     ]
     lines += _judge_health_line(result)
 
