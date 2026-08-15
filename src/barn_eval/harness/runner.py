@@ -27,6 +27,7 @@ from typing import Optional
 
 from ..aggregation import aggregate, load_severity_map, load_thresholds
 from ..judge.client import JudgeConfigError, build_judge
+from ..reliability import audit_groundedness, load_groundability_audit, run_invariance
 from ..reporting import write_reports
 from ..scorers.deterministic import DETERMINISTIC_SCORERS
 from ..scorers.judge import build_judge_scorers
@@ -64,6 +65,19 @@ class RunResult:
     judge_status: str = ""
     join_report: object = None
     validate: Optional[ValidateResult] = None
+
+
+@dataclass
+class ReliabilityRunResult:
+    """Outcome of an evaluator-invariance run (Phase 6, gate 5 input)."""
+
+    out_path: Optional[Path]
+    exit_code: int
+    judge_status: str
+    verdict_flip_rate: Optional[float]     # None => nothing comparable; gate 5 stays NOT_EVALUATED
+    report: object = None                  # ReliabilityReport
+    disagreement: object = None            # DisagreementReport | None
+    gate5_status: str = "not_evaluated"
 
 
 # -- helpers ----------------------------------------------------------------
@@ -306,6 +320,92 @@ def _write_precondition_failure(run_dir, meta, vresult, config) -> None:
     }
     (run_dir / "result.json").write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
     (run_dir / "run_metadata.json").write_text(json.dumps(meta.model_dump(), indent=2), encoding="utf-8")
+
+
+# -- reliability (Phase 6, block condition 3.14.5) --------------------------
+def _reliability_records(config) -> tuple[list, list]:
+    """Load + join the records the invariance suite perturbs. Reuses the run
+    pipeline up to the join; registry violations fail closed (a broken suite is
+    not a stability measurement)."""
+    cases, schema_errors = _load_all_cases(config)
+    patients = _load_patients(config)
+    violations = check_registry(cases, patients)
+    if violations:
+        raise JudgeConfigError(
+            f"suite has {len(violations)} registry violation(s); fix preconditions before reliability testing"
+        )
+    responses, _ = load_responses(resolve(config, config["data"]["responses"]))
+    confirmations, _ = load_confirmations(resolve(config, config["data"]["confirmations"]))
+    records, _ = join(cases, responses, confirmations)
+    return [r for r in records if not r.is_missing], schema_errors
+
+
+def run_reliability(config, *, seed: Optional[int] = None, write: bool = True) -> ReliabilityRunResult:
+    """Evaluate the evaluator: verdict-flip rate under meaning-preserving
+    perturbation, plus judge-vs-reference disagreement. Writes reliability.json.
+
+    A judge that cannot be built (replay_only / disabled / missing key) yields a
+    SKIPPED result with no flip rate, so gate 5 stays NOT_EVALUATED rather than
+    being handed a fabricated pass.
+    """
+    jcfg = config.get("judge", {})
+    seed = seed if seed is not None else config["run"]["seed"]
+    try:
+        judge = build_judge(jcfg)
+    except JudgeConfigError as exc:
+        return ReliabilityRunResult(
+            out_path=None, exit_code=EXIT_OK, judge_status=f"skipped ({exc})",
+            verdict_flip_rate=None, gate5_status="not_evaluated",
+        )
+
+    scorers = build_judge_scorers(judge)
+    records, _ = _reliability_records(config)
+    report = run_invariance(records, scorers, seed=seed)
+
+    # Judge-vs-reference disagreement over the groundability audit, when present.
+    disagreement = None
+    audit_path = config.get("data", {}).get("groundability_audit")
+    if audit_path:
+        resolved = resolve(config, audit_path)
+        if resolved.exists():
+            disagreement = audit_groundedness(judge, load_groundability_audit(resolved))
+
+    flip_rate = report.gate_input()
+    thr = load_thresholds(resolve(config, config.get("paths", {}).get("thresholds", "configs/thresholds.yaml")))
+    max_flip = thr.get("gates", {}).get("evaluator_instability", {}).get("max_verdict_flip_rate", 0.0)
+    if flip_rate is None:
+        gate5 = "not_evaluated"
+    else:
+        gate5 = "fail" if flip_rate > max_flip else "pass"
+
+    out_path = None
+    if write:
+        meta = _run_metadata(config)
+        out_dir = resolve(config, config["run"]["output_dir"]) / meta.run_id
+        out_dir.mkdir(parents=True, exist_ok=True)
+        out_path = out_dir / "reliability.json"
+        payload = {
+            "run_metadata": meta.model_dump(),
+            "judge_model": jcfg.get("model"),
+            "seed": seed,
+            "verdict_flip_rate": flip_rate,
+            "gate5_status": gate5,
+            "max_verdict_flip_rate": max_flip,
+            "invariance": report.to_dict(),
+            "disagreement": disagreement.to_dict() if disagreement else None,
+        }
+        out_path.write_text(json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8")
+
+    return ReliabilityRunResult(
+        out_path=out_path, exit_code=EXIT_OK, judge_status=f"enabled ({jcfg.get('model')})",
+        verdict_flip_rate=flip_rate, report=report, disagreement=disagreement, gate5_status=gate5,
+    )
+
+
+def read_flip_rate(reliability_path: str | Path) -> Optional[float]:
+    """Pull the verdict_flip_rate out of a reliability.json for a subsequent run."""
+    data = json.loads(Path(reliability_path).read_text(encoding="utf-8"))
+    return data.get("verdict_flip_rate")
 
 
 def run_from_path(config_path, **kw) -> RunResult:
