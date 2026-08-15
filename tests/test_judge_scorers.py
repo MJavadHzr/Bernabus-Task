@@ -88,7 +88,7 @@ def test_groundedness_unsupported():
     case = _case([_doc("d")], {"expected_behavior": "answer"})
     resp = _resp([_claim("c1", "invented", ["d"])])
     f = GroundednessScorer(Stub({"category": "unsupported", "rationale": "r"})).score(_rec(case, resp))
-    assert f and f[0].is_failure and f[0].failure_type == "unsupported_claim" and f[0].section == "3.3"
+    assert f and f[0].is_failure and f[0].failure_type == "unsupported_claim" and f[0].section == "unsupported"
 
 
 def test_groundedness_wrong_source_vs_overreach_split():

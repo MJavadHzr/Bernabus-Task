@@ -23,7 +23,7 @@ _HANDLING = {"correct", "silent_resolution", "wrong_outcome", "missed"}
 class ConflictHandlingScorer(JudgeScorer):
     """One finding per case that gold marks as carrying an evidence conflict."""
 
-    section = "3.9"
+    section = "conflict-handling"
 
     def score(self, record) -> list[Finding]:
         if record.is_missing:
@@ -53,7 +53,7 @@ class ConflictHandlingScorer(JudgeScorer):
 
         return [
             Finding(
-                section="3.9",
+                section="conflict-handling",
                 failure_type="" if handling == "correct" else handling,
                 passed=handling == "correct",
                 # Silent resolution is a governance failure regardless of the pick.

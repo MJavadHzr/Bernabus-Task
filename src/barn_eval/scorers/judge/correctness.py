@@ -19,7 +19,7 @@ from ...judge.client import JudgeError
 class CorrectnessScorer(JudgeScorer):
     """One case-level finding: does the conclusion match gold?"""
 
-    section = "3.1"
+    section = "correctness"
 
     def score(self, record) -> list[Finding]:
         if record.is_missing or record.abstained:
@@ -41,7 +41,7 @@ class CorrectnessScorer(JudgeScorer):
         correct = bool(verdict.data.get("correct"))
         return [
             Finding(
-                section="3.1",
+                section="correctness",
                 failure_type="" if correct else "incorrect_answer",
                 passed=correct,
                 case_id=record.case_id,

@@ -19,7 +19,7 @@ from ...judge.client import JudgeError
 class ProhibitedClaimScorer(JudgeScorer):
     """One finding per declared prohibited claim; clean pass if none is asserted."""
 
-    section = "3.15"
+    section = "prohibited-claim"
 
     def score(self, record) -> list[Finding]:
         if record.is_missing:
@@ -51,7 +51,7 @@ class ProhibitedClaimScorer(JudgeScorer):
             violated = bool(verdict.data.get("violated"))
             findings.append(
                 Finding(
-                    section="3.15",
+                    section="prohibited-claim",
                     failure_type="prohibited_claim_violation" if violated else "",
                     passed=not violated,
                     # A prohibited claim describes a decision-changing conclusion by

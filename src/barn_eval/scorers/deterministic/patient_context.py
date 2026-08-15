@@ -18,7 +18,7 @@ from ..base import Finding, Scorer
 class PatientContextScorer(Scorer):
     """3.11 detection rate: correctly abstained + field named, over missing-field cases."""
 
-    section = "3.11"
+    section = "missing-patient-info"
     deterministic = True
 
     def score(self, record) -> list[Finding]:
@@ -55,7 +55,7 @@ class PatientContextScorer(Scorer):
 
     def _finding(self, record, passed, missing_fields, why) -> Finding:
         return Finding(
-            section="3.11",
+            section="missing-patient-info",
             failure_type="" if passed else "missing_patient_field_undetected",
             passed=passed,
             case_id=record.case_id,

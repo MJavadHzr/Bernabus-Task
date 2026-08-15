@@ -18,7 +18,7 @@ from ..base import Finding, Scorer
 class IntegrityScorer(Scorer):
     """Cited-document integrity + the per-response provenance record."""
 
-    section = "PartFour.5"
+    section = "evidence-integrity"
     deterministic = True
 
     def score(self, record) -> list[Finding]:
@@ -39,7 +39,7 @@ class IntegrityScorer(Scorer):
                 # integrity records the provenance break.
                 findings.append(
                     Finding(
-                        section="PartFour.5",
+                        section="evidence-integrity",
                         failure_type="citation_unresolved",
                         passed=False,
                         unit_id=source_id,
@@ -54,7 +54,7 @@ class IntegrityScorer(Scorer):
             if not hash_ok:
                 findings.append(
                     Finding(
-                        section="PartFour.5",
+                        section="evidence-integrity",
                         failure_type="content_hash_mismatch",
                         passed=False,
                         unit_id=source_id,
@@ -71,7 +71,7 @@ class IntegrityScorer(Scorer):
             if missing_fields:
                 findings.append(
                     Finding(
-                        section="PartFour.5",
+                        section="evidence-integrity",
                         failure_type="incomplete_provenance",
                         passed=False,
                         unit_id=source_id,
@@ -96,7 +96,7 @@ class IntegrityScorer(Scorer):
         # Per-response provenance record (data artifact, not a pass/fail unit).
         findings.append(
             Finding(
-                section="PartFour.5",
+                section="evidence-integrity",
                 passed=True,
                 counts_denominator=False,
                 case_id=record.case_id,

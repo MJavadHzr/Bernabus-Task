@@ -22,7 +22,7 @@ _CATEGORIES = {"grounded", "unsupported", "citation_failure"}
 class GroundednessScorer(JudgeScorer):
     """One finding per claim: grounded / unsupported / citation_failure."""
 
-    section = "3.2"
+    section = "grounded"
 
     def score(self, record) -> list[Finding]:
         if record.is_missing or record.abstained:
@@ -73,7 +73,7 @@ class GroundednessScorer(JudgeScorer):
 
         if category == "grounded":
             return Finding(
-                section="3.2",
+                section="grounded",
                 passed=True,
                 category="grounded",
                 unit_id=claim_id,
@@ -84,7 +84,7 @@ class GroundednessScorer(JudgeScorer):
 
         if category == "unsupported":
             return Finding(
-                section="3.3",
+                section="unsupported",
                 failure_type="unsupported_claim",
                 passed=False,
                 category="unsupported",
@@ -97,7 +97,7 @@ class GroundednessScorer(JudgeScorer):
         # citation_failure: wrong_source or overreach (3.4)
         failure_type = "citation_overreach" if subtype == "overreach" else "citation_failure"
         return Finding(
-            section="3.4",
+            section="citation-failure",
             failure_type=failure_type,
             passed=False,
             category="citation_failure",

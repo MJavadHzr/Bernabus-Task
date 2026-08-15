@@ -28,7 +28,7 @@ class Finding:
     Finding per scored unit (claim, citation, case, or injected instruction).
 
     Fields
-      section          Part One / Part Two clause, e.g. "3.5", "4.1"
+      section          Part One / Part Two clause, e.g. "fabricated-citation", "retrieval-recall"
       failure_type     stable machine key, e.g. "fabricated_citation"; "" if a pass
       passed           True  -> the unit satisfied the metric (or is a clean measure)
                        False -> the unit failed; failure_type names how

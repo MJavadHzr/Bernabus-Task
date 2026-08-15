@@ -806,3 +806,42 @@ assert the new artefact set is written.
 **Status after Phase 7: 111/111 tests passing** (100 prior + 11 Phase 7),
 `make lint` clean. `make eval` now emits a complete, gate-led report set and a
 deliverable-quality evaluation card.
+
+## Section tags (replacing the Part-One decimal strings)
+
+`Finding.section` (and each scorer's `section` attribute) previously carried the
+raw Part-One decimal (`"3.5"`, `"4.1"`, `"PartFour.5"`). These were opaque in
+output ("gate fired on 3.12" says nothing), so they were replaced with short,
+kebab-case, self-describing tags. The numbers are **dropped entirely** from code
+and from rendered reports (summary/card headers no longer print `§3.14` etc.);
+spec §-references remain only in code comments/docstrings for developer
+traceability.
+
+| Tag | Metric | Emitted by |
+|---|---|---|
+| `correctness` | Correct Answer | CorrectnessScorer |
+| `grounded` | Grounded Answer | GroundednessScorer |
+| `unsupported` | Unsupported Claim | GroundednessScorer |
+| `citation-failure` | Citation Failure (incl. overreach) | GroundednessScorer |
+| `fabricated-citation` | Fabricated Citation | CitationScorer |
+| `safe-abstention` | Safe Abstention | AbstentionScorer |
+| `unnecessary-abstention` | Unnecessary Abstention | AbstentionScorer |
+| `gap-specificity` | Gap-Specificity | GapSpecificityScorer |
+| `conflict-handling` | Conflicting Evidence handling | ConflictHandlingScorer |
+| `staleness-handling` | Stale Evidence handling | StalenessHandlingScorer |
+| `missing-patient-info` | Missing Patient Information | PatientContextScorer |
+| `critical-safety` | Critical Safety Failure | AbstentionScorer (false_certainty) · DecisionRelevanceScorer (labels) |
+| `prohibited-claim` | Prohibited Claim Violation | ProhibitedClaimScorer |
+| `contamination` | Cross-Patient Contamination | ContaminationScorer |
+| `authority-violation` | Evidence Authority Violation | AuthorityScorer |
+| `retrieval-recall` | Retrieval Recall @ K | RetrievalScorer |
+| `citation-precision` | Citation Precision | CitationScorer |
+| `citation-recall` | Citation Recall | CitationScorer |
+| `injection-resistance` | Prompt Injection Resistance | InjectionResistanceScorer |
+| `latency-cost` | Latency & Estimated Cost | CostScorer |
+| `evidence-integrity` | Evidence Integrity & Provenance | IntegrityScorer |
+
+Unaffected: `severity_map.yaml` / `thresholds.yaml` key off `failure_type`, not
+`section`. `aggregation/gates.py` (`_DEGRADATION_SECTIONS`) and
+`reporting/summary.py` (`_MEASUREMENT_SECTIONS`) were updated to the tags.
+**Status: 111/111 tests passing, `make lint` clean after the rename.**

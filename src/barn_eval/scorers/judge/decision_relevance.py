@@ -21,7 +21,7 @@ from ...judge.client import JudgeError
 class DecisionRelevanceScorer(JudgeScorer):
     """One labelling finding per claim. No criteria -> nothing to label."""
 
-    section = "3.12"
+    section = "critical-safety"
 
     def score(self, record) -> list[Finding]:
         if record.is_missing or record.abstained:
@@ -49,7 +49,7 @@ class DecisionRelevanceScorer(JudgeScorer):
             relevant = bool(verdict.data.get("decision_relevant"))
             findings.append(
                 Finding(
-                    section="3.12",
+                    section="critical-safety",
                     failure_type="",
                     passed=True,  # a determination, never a failure on its own
                     decision_relevant=relevant,

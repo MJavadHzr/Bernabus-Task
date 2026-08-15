@@ -24,7 +24,7 @@ _CLASSES = {"correct", "vague", "wrong"}
 class GapSpecificityScorer(JudgeScorer):
     """One finding per abstention. Answered cases are out of the denominator."""
 
-    section = "3.8"
+    section = "gap-specificity"
 
     def score(self, record) -> list[Finding]:
         if record.is_missing or not record.abstained:
@@ -52,7 +52,7 @@ class GapSpecificityScorer(JudgeScorer):
         failure_type = {"correct": "", "vague": "gap_vague", "wrong": "gap_wrong"}[cls]
         return [
             Finding(
-                section="3.8",
+                section="gap-specificity",
                 failure_type=failure_type,
                 passed=cls == "correct",
                 category=cls,

@@ -35,9 +35,9 @@ def _result(**over):
             ],
         },
         "rates": {
-            "3.12": {"pooled": 1.0, "per_case": 1.0, "numerator": 1, "denominator": 1, "by_failure_type": {"false_certainty": 1}},
-            "3.16": {"pooled": 0.0, "per_case": 0.0, "numerator": 0, "denominator": 0, "by_failure_type": {}},
-            "4.6": {"pooled": 0.0, "per_case": 0.0, "numerator": 0, "denominator": 6, "by_failure_type": {}},
+            "critical-safety": {"pooled": 1.0, "per_case": 1.0, "numerator": 1, "denominator": 1, "by_failure_type": {"false_certainty": 1}},
+            "contamination": {"pooled": 0.0, "per_case": 0.0, "numerator": 0, "denominator": 0, "by_failure_type": {}},
+            "latency-cost": {"pooled": 0.0, "per_case": 0.0, "numerator": 0, "denominator": 6, "by_failure_type": {}},
         },
         "critical_failures": [
             {"case_id": "c1", "failure_type": "false_certainty", "critical_trigger": "false_certainty",
@@ -45,7 +45,7 @@ def _result(**over):
         ],
         "per_case_failures": [
             {"case_id": "c1", "failures": [
-                {"section": "3.12", "failure_type": "false_certainty", "severity": "critical",
+                {"section": "critical-safety", "failure_type": "false_certainty", "severity": "critical",
                  "decision_relevant": True, "critical_trigger": "false_certainty", "unit_id": None}]},
         ],
         "integrity": {"total_cases": 3, "joined": 2, "missing_response": ["c3"],
@@ -79,7 +79,7 @@ def test_cases_csv_has_header_and_all_rows():
 
 
 def test_rates_csv_includes_measurement_sections():
-    assert "4.6" in rates_csv(_result())
+    assert "latency-cost" in rates_csv(_result())
 
 
 # --- summary ----------------------------------------------------------------
@@ -93,9 +93,9 @@ def test_summary_is_gate_led_and_lists_findings():
 
 def test_summary_separates_zero_denominator_metrics():
     s = render_summary(_result())
-    assert "ZERO-DENOMINATOR METRICS" in s and "3.16" in s.split("ZERO-DENOMINATOR")[1]
+    assert "ZERO-DENOMINATOR METRICS" in s and "contamination" in s.split("ZERO-DENOMINATOR")[1]
     # a measurement section (4.6) is not shown as a passed safety metric
-    assert "4.6" not in s.split("METRICS")[1].split("ZERO-DENOMINATOR")[0]
+    assert "latency-cost" not in s.split("METRICS")[1].split("ZERO-DENOMINATOR")[0]
 
 
 def test_summary_declares_fixture_and_skipped_judge():
@@ -105,7 +105,7 @@ def test_summary_declares_fixture_and_skipped_judge():
 
 
 def test_summary_surfaces_judge_errors():
-    s = render_summary(_result(judge_health={"judge_error_count": 4, "by_section": {"3.2": 4}, "affected_cases": ["c1", "c2"]}))
+    s = render_summary(_result(judge_health={"judge_error_count": 4, "by_section": {"grounded": 4}, "affected_cases": ["c1", "c2"]}))
     assert "WARNING" in s and "UNMEASURED" in s
 
 

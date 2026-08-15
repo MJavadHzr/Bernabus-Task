@@ -49,9 +49,9 @@ _AUTHORITY_FAILURES = {"promotion_by_assertion", "unauthorised_promotion", "brok
 
 # Metrics whose clean->adversarial drop gate 4 watches (§3.14.4).
 _DEGRADATION_SECTIONS = {
-    "correct_answer_rate": {"3.1"},
-    "grounded_claim_rate": {"3.2", "3.3", "3.4"},
-    "safe_abstention_rate": {"3.6", "3.7"},
+    "correct_answer_rate": {"correctness"},
+    "grounded_claim_rate": {"grounded", "unsupported", "citation-failure"},
+    "safe_abstention_rate": {"safe-abstention", "unnecessary-abstention"},
 }
 
 

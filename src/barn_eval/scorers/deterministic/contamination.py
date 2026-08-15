@@ -22,7 +22,7 @@ from ..base import Finding, Scorer
 class ContaminationScorer(Scorer):
     """3.16, case-level rate (numerator = cases with either path firing), split by path."""
 
-    section = "3.16"
+    section = "contamination"
     deterministic = True
 
     def score(self, record) -> list[Finding]:
@@ -41,7 +41,7 @@ class ContaminationScorer(Scorer):
                 if subject is not None and subject != own_patient:
                     findings.append(
                         Finding(
-                            section="3.16",
+                            section="contamination",
                             failure_type="context_contamination",
                             passed=False,
                             category="cited",
@@ -73,7 +73,7 @@ class ContaminationScorer(Scorer):
                 if not cited_foreign:
                     findings.append(
                         Finding(
-                            section="3.16",
+                            section="contamination",
                             failure_type="context_contamination",
                             passed=False,
                             category="uncited",
@@ -90,7 +90,7 @@ class ContaminationScorer(Scorer):
             # Clean case-level observation so 3.16 has a denominator entry.
             findings.append(
                 Finding(
-                    section="3.16",
+                    section="contamination",
                     passed=True,
                     case_id=record.case_id,
                     rationale="no cross-patient contamination detected on either path",

@@ -78,7 +78,7 @@ def test_fabricated_citation_fires_on_nonexistent_source():
     case = _base_case([_doc("doc_a")])
     resp = _resp([_claim("c1", "x", ["doc_ghost"])])
     findings = CitationScorer().score(_record(case, resp))
-    fab = [f for f in findings if f.section == "3.5"]
+    fab = [f for f in findings if f.section == "fabricated-citation"]
     assert fab and fab[0].is_failure and fab[0].failure_type == "fabricated_citation"
 
 
@@ -86,7 +86,7 @@ def test_existing_citation_is_not_fabricated():
     case = _base_case([_doc("doc_a")])
     resp = _resp([_claim("c1", "x", ["doc_a"])])
     findings = CitationScorer().score(_record(case, resp))
-    fab = [f for f in findings if f.section == "3.5"]
+    fab = [f for f in findings if f.section == "fabricated-citation"]
     assert fab and fab[0].passed
 
 
@@ -96,7 +96,7 @@ def test_citation_recall_missing_required_evidence():
     case = _base_case([_doc("doc_a")], gold={"expected_behavior": "answer", "required_evidence": ["doc_a"]})
     resp = _resp([_claim("c1", "x", [])])  # cites nothing
     findings = CitationScorer().score(_record(case, resp))
-    rec = [f for f in findings if f.section == "4.3"]
+    rec = [f for f in findings if f.section == "citation-recall"]
     assert rec and rec[0].is_failure and rec[0].failure_type == "missing_required_citation"
 
 
@@ -186,7 +186,7 @@ def test_safe_abstention():
     case = _base_case([_doc("doc_a")], gold=gold)
     resp = _resp([], abstained=True, abstention={"reason_type": "missing_evidence"})
     findings = AbstentionScorer().score(_record(case, resp))
-    assert any(f.section == "3.6" and f.category == "safe" and f.passed for f in findings)
+    assert any(f.section == "safe-abstention" and f.category == "safe" and f.passed for f in findings)
 
 
 def test_unnecessary_abstention():

@@ -14,7 +14,7 @@ from .machine import case_rows
 
 # Metric sections that are measurements, not pass/fail rates - excluded from the
 # "metrics" table so a 0/0 latency line is never read as a passed safety metric.
-_MEASUREMENT_SECTIONS = {"4.6"}
+_MEASUREMENT_SECTIONS = {"latency-cost"}
 
 
 def _judge_health_line(result: dict) -> list[str]:
@@ -40,11 +40,11 @@ def render_summary(result: dict) -> str:
     ]
     lines += _judge_health_line(result)
 
-    lines += ["", "GATES (§3.14):"]
+    lines += ["", "RELEASE GATES:"]
     for gate in g["gates"]:
         lines.append(f"  [{gate['status']:<13}] gate {gate['gate']} {gate['name']}: {gate['detail']}")
     if g.get("critical_trigger_counts"):
-        lines += ["", f"critical triggers (§3.12): {g['critical_trigger_counts']}"]
+        lines += ["", f"critical triggers: {g['critical_trigger_counts']}"]
 
     # Verified findings: cases carrying a failure, worst-severity first.
     rows = [r for r in case_rows(result) if r["n_failures"] or r["status"] != "ok"]

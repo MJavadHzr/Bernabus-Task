@@ -16,7 +16,7 @@ from ..base import Finding, Scorer
 class CostScorer(Scorer):
     """4.6 latency + cost, tagged by case type and answer path. Self-reported (attested)."""
 
-    section = "4.6"
+    section = "latency-cost"
     deterministic = True
 
     def score(self, record) -> list[Finding]:
@@ -34,7 +34,7 @@ class CostScorer(Scorer):
 
         findings = [
             Finding(
-                section="4.6",
+                section="latency-cost",
                 failure_type="",
                 passed=True,
                 unit_id="latency_ms",
@@ -44,7 +44,7 @@ class CostScorer(Scorer):
                 evidence=bucket,
             ),
             Finding(
-                section="4.6",
+                section="latency-cost",
                 failure_type="",
                 passed=True,
                 unit_id="estimated_cost_usd",

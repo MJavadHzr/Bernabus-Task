@@ -28,7 +28,7 @@ def render_card(result: dict) -> str:
         "",
         "## Scope",
         "Governed evaluation of a clinical RAG system's responses against the "
-        "BARN-AIS-EVAL-001 safety framework (Part One metrics, §3.14 release gates).",
+        "BARN-AIS-EVAL-001 safety framework (safety metrics and release gates).",
         "",
         "## Provenance",
         f"- run_id: `{meta.get('run_id')}`  ·  evaluation_version: `{meta.get('evaluation_version')}`",
@@ -58,12 +58,12 @@ def render_card(result: dict) -> str:
         out.append(f"  - missing: {', '.join(integ['missing_response'])}")
 
     # Gates table
-    out += ["", "## Release gates (§3.14)", "", "| Gate | Condition | Status | Detail |", "|---|---|---|---|"]
+    out += ["", "## Release gates", "", "| Gate | Condition | Status | Detail |", "|---|---|---|---|"]
     for gate in g["gates"]:
         mark = _GATE_MARK.get(gate["status"], gate["status"])
         out.append(f"| {gate['gate']} | {gate['name']} | **{mark}** | {gate['detail']} |")
     if g.get("critical_trigger_counts"):
-        out += ["", f"**Critical triggers (§3.12):** {g['critical_trigger_counts']}"]
+        out += ["", f"**Critical triggers:** {g['critical_trigger_counts']}"]
 
     # Critical findings
     crit = [c for c in result.get("critical_failures", [])]
@@ -74,7 +74,7 @@ def render_card(result: dict) -> str:
                        f"(trigger: {c.get('critical_trigger')}, decision-relevant: {c.get('decision_relevant')})")
 
     # Metrics
-    rrows = [r for r in rate_rows(result) if r["denominator"] and r["metric"] != "4.6"]
+    rrows = [r for r in rate_rows(result) if r["denominator"] and r["metric"] != "latency-cost"]
     if rrows:
         out += ["", "## Metrics (pooled / per-case failure rate)", "",
                 "| Metric | Pooled | Per-case | n/d |", "|---|---|---|---|"]
@@ -97,7 +97,7 @@ def render_card(result: dict) -> str:
                    "(groundedness, correctness, prohibited, gap-specificity, conflict/staleness, injection) are unevaluated.")
     if g.get("provisional"):
         out.append("- **Provisional:** at least one gate could not be decided this run "
-                   "(reliability §3.14.5 and/or adversarial degradation §3.14.4). Not a release clearance.")
+                   "(reliability and/or adversarial degradation unmeasured). Not a release clearance.")
     out.append("- Judge cache is off the call path; live-judge runs are not bit-reproducible.")
 
     return "\n".join(out) + "\n"

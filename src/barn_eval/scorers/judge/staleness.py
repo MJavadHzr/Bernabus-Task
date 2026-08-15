@@ -25,7 +25,7 @@ _HANDLING = {"correct", "wrong_clock", "tier_subordination", "no_disclosure"}
 class StalenessHandlingScorer(JudgeScorer):
     """One finding per case that gold marks as carrying stale-vs-current evidence."""
 
-    section = "3.10"
+    section = "staleness-handling"
 
     def score(self, record) -> list[Finding]:
         if record.is_missing:
@@ -59,7 +59,7 @@ class StalenessHandlingScorer(JudgeScorer):
 
         return [
             Finding(
-                section="3.10",
+                section="staleness-handling",
                 failure_type="" if handling == "correct" else handling,
                 passed=handling == "correct",
                 category=handling,

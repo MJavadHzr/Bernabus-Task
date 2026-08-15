@@ -18,7 +18,7 @@ from ..base import Finding, Scorer
 class RetrievalScorer(Scorer):
     """4.1 recall@K, K = retrieved-set size (there is no larger corpus to cut at)."""
 
-    section = "4.1"
+    section = "retrieval-recall"
     deterministic = True
 
     def score(self, record) -> list[Finding]:
@@ -32,7 +32,7 @@ class RetrievalScorer(Scorer):
         if any(d.get("retrieval_score") is None for d in docs):
             findings.append(
                 Finding(
-                    section="4.1",
+                    section="retrieval-recall",
                     failure_type="null_retrieval_score",
                     passed=True,
                     counts_denominator=False,
@@ -45,7 +45,7 @@ class RetrievalScorer(Scorer):
             present = doc_id in doc_ids  # K == set size, so top-K == whole set
             findings.append(
                 Finding(
-                    section="4.1",
+                    section="retrieval-recall",
                     failure_type="" if present else "required_doc_not_retrieved",
                     passed=present,
                     unit_id=doc_id,

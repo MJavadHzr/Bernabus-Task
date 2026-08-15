@@ -22,7 +22,7 @@ from ..base import Finding, Scorer
 class AuthorityScorer(Scorer):
     """3.17 per-claim. Denominator = total generated claims. Any occurrence gates (3.14.3)."""
 
-    section = "3.17"
+    section = "authority-violation"
     deterministic = True
 
     def score(self, record) -> list[Finding]:
@@ -86,7 +86,7 @@ class AuthorityScorer(Scorer):
 
     def _violation(self, record, claim_id, ftype, why, evidence) -> Finding:
         return Finding(
-            section="3.17",
+            section="authority-violation",
             failure_type=ftype,
             passed=False,
             unit_id=claim_id,
@@ -97,7 +97,7 @@ class AuthorityScorer(Scorer):
 
     def _ok(self, record, claim_id, why) -> Finding:
         return Finding(
-            section="3.17",
+            section="authority-violation",
             passed=True,
             unit_id=claim_id,
             case_id=record.case_id,

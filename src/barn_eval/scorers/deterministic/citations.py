@@ -22,7 +22,7 @@ from ..base import Finding, Scorer
 class CitationScorer(Scorer):
     """Emits findings for 3.5 (fabricated), 4.3 (recall), and the existence half of 4.2."""
 
-    section = "3.5"
+    section = "fabricated-citation"
     deterministic = True
 
     def score(self, record) -> list[Finding]:
@@ -40,7 +40,7 @@ class CitationScorer(Scorer):
                 # 4.2 existence half: a citation to a non-existent source is imprecise.
                 findings.append(
                     Finding(
-                        section="4.2",
+                        section="citation-precision",
                         failure_type="" if c in docs else "citation_nonexistent",
                         passed=c in docs,
                         unit_id=c,
@@ -52,7 +52,7 @@ class CitationScorer(Scorer):
             # 3.5 fabricated: a claim carrying any non-existent source id.
             findings.append(
                 Finding(
-                    section="3.5",
+                    section="fabricated-citation",
                     failure_type="fabricated_citation" if missing else "",
                     passed=not missing,
                     unit_id=claim_id,
@@ -72,7 +72,7 @@ class CitationScorer(Scorer):
             present = doc_id in cited_ids
             findings.append(
                 Finding(
-                    section="4.3",
+                    section="citation-recall",
                     failure_type="" if present else "missing_required_citation",
                     passed=present,
                     unit_id=doc_id,
