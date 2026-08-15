@@ -5,7 +5,7 @@
 VENV   := .venv
 PY     := $(VENV)/bin/python
 PIP    := $(VENV)/bin/pip
-CONFIG := configs/run.default.yaml
+CONFIG := configs/run.pilot.yaml
 
 help:
 	@echo "make install     create venv and install pinned dependencies"
