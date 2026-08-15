@@ -8,3 +8,4 @@ htmlcov/
 results/runs/*/
 !results/runs/.gitkeep
 .DS_Store
+*.egg-info/
