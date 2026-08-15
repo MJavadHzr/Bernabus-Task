@@ -845,3 +845,112 @@ Unaffected: `severity_map.yaml` / `thresholds.yaml` key off `failure_type`, not
 `section`. `aggregation/gates.py` (`_DEGRADATION_SECTIONS`) and
 `reporting/summary.py` (`_MEASUREMENT_SECTIONS`) were updated to the tags.
 **Status: 111/111 tests passing, `make lint` clean after the rename.**
+
+---
+
+## Phase 6 — Evaluate the evaluator (block condition 3.14.5)
+
+The evaluator must be shown stable before any system score is trusted. Gate 5
+takes precedence over every metric the system earns, so this phase produces the
+number it consumes (`verdict_flip_rate`) plus a judge-vs-reference disagreement
+diagnostic. All machinery is exercised with stub judges in tests — no network.
+
+### `src/barn_eval/reliability/perturbations.py`
+
+Meaning-preserving transforms on what the **evaluator** reads. Each is a pure
+`(record, *, seed) -> EvaluationRecord` that deep-copies the case/response (the
+baseline is never mutated) and **never changes a `claim_id`/`instruction_id`**, so
+baseline and perturbed verdicts align unit-for-unit downstream.
+
+- **`claim_order`** — seeded shuffle of `response["claims"]`, mirrored into
+  `answer_text`. A groundedness/correctness verdict must not depend on a claim's
+  position.
+- **`citation_format`** — uppercases every citation id **consistently** across the
+  claim's `citations`, the document's `source_id`, and the harness-computed
+  `supporting_spans` keys, so the claim→document join is preserved and only the
+  spelling changes. This is the preprocessor's unresolved open question
+  (`doc_c001a` vs `DOC_C001A`) made concrete: a stable judge must not flip on
+  citation case alone.
+- **`paraphrase`** — conservative, deterministic lexical rewrites (`the patient`↔
+  `this patient`, contractions, `however`→`though`). No LLM rewrite on purpose, so
+  meaning cannot drift and the test stays reproducible.
+- **`whitespace`** — whitespace/trailing-punctuation jitter only.
+
+`PERTURBATIONS` / `default_perturbations()` expose the four as a name→callable
+registry the driver iterates.
+
+### `src/barn_eval/reliability/invariance.py`
+
+The flip-rate driver.
+
+- **`run_invariance(records, scorers, *, perturbations, seed)`** — scores the
+  baseline with the injected judge scorers, then re-scores each perturbed variant
+  with the **same** scorer instances, and compares verdicts unit-for-unit.
+- **Unit key = `(case_id, metric_group, unit_id)`.** The *group*, not the raw
+  section, because groundedness encodes its verdict **in** the section
+  (`grounded`/`unsupported`/`citation-failure` for one claim). `_SECTION_GROUP`
+  collapses those three to `groundedness` — they share one denominator, so a move
+  between them is a real flip that a section-keyed comparison would have silently
+  dropped as "two unrelated units". (This was caught by a test and fixed.)
+- **A flip** = `passed`, `failure_type`, or `category` differ between baseline and
+  perturbed for the same unit.
+- **Judge outages are excluded**: a unit that is a `judge_error` on either side is
+  neither a flip nor an agreement — it is counted in `judge_errors_excluded` and
+  dropped from the denominator (fail-closed elsewhere; here an outage is a
+  measurement gap, not a stability signal).
+- **`ReliabilityReport.verdict_flip_rate`** = flips / comparable unit-verdicts over
+  all perturbations. **`gate_input()`** returns `None` when nothing was comparable
+  (no judge scorers, or every unit errored) so gate 5 stays `NOT_EVALUATED` rather
+  than being handed a fabricated `0.0` that would read as "stable".
+
+### `src/barn_eval/reliability/disagreement.py`
+
+Part Two: the judge is one component, never the only evaluator.
+
+- **`audit_groundedness(judge, audit)`** — runs the groundedness prompt over
+  `evaluation_cases/groundability_audit.jsonl` (7 hand-labelled items whose payload
+  is exactly what `GroundednessScorer` sends), and compares the judge's category
+  (and `citation_failure` subtype — `overreach` vs `wrong_source` must match, since
+  only overreach escalates to critical) against `gold_category`.
+- **`DisagreementReport`** reports `disagreement_rate` per metric and lists the
+  mismatched items. It is a **diagnostic**, not a gate: it characterises the judge
+  for the evaluation card and points reviewers at specific items. Outages are
+  excluded from its denominator too.
+
+### `src/barn_eval/harness/runner.py` — `run_reliability(config, *, seed, write)`
+
+Orchestrates the above: builds the judge (a `replay_only`/disabled/missing-key
+config yields a **SKIPPED** result with no flip rate — gate 5 stays
+`NOT_EVALUATED`), loads+joins records (registry violations fail closed), runs the
+invariance suite and the audit, computes gate 5's PASS/FAIL against
+`thresholds.gates.evaluator_instability.max_verdict_flip_rate`, and writes
+`results/runs/<run_id>/reliability.json`. **`read_flip_rate(path)`** pulls the
+`verdict_flip_rate` back out for a subsequent scored run.
+
+### `src/barn_eval/cli.py`
+
+- **`reliability [--seed]`** — runs the suite, prints the per-perturbation flip
+  breakdown, the judge-vs-reference disagreement, and the resulting gate-5 verdict;
+  writes `reliability.json`.
+- **`run --reliability <reliability.json>`** — sources gate 5's
+  `evaluator_flip_rate` from a prior reliability run, so a scored run can reach a
+  non-provisional recommendation. Without it, gate 5 remains `NOT_EVALUATED` and
+  the recommendation is at best `PROVISIONAL_PASS` — an unmeasured evaluator is
+  never declared stable.
+
+### Preprocessor scope
+
+3.14.5 covers the evaluation-side preprocessor as well as the judge. The
+preprocessor is PARKED in this build (`preprocessor/__init__.py`), so this phase
+exercises the judge and records the preprocessor as a declared, unexercised
+surface rather than pretending it was tested.
+
+### `tests/test_reliability.py`
+
+Stub judges only (no network): perturbations preserve `claim_id`s and the
+claim→document join and don't mutate the baseline; an unstable judge (flips on a
+trailing period the whitespace perturbation adds) is caught **and only by the
+perturbation that moves it**; a stable judge yields zero flips; judge outages are
+excluded from the flip denominator (`gate_input()` → `None`); the audit reports a
+0.5 disagreement rate against a two-item reference; and the flip rate drives gate 5
+(`None`→NOT_EVALUATED, `0.0`→PASS, `0.25`→FAIL).
