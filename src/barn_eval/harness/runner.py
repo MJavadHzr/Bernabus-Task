@@ -19,6 +19,7 @@ from __future__ import annotations
 import hashlib
 import json
 import subprocess
+import sys
 from collections import Counter
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
@@ -340,16 +341,28 @@ def _reliability_records(config) -> tuple[list, list]:
     return [r for r in records if not r.is_missing], schema_errors
 
 
-def run_reliability(config, *, seed: Optional[int] = None, write: bool = True) -> ReliabilityRunResult:
+def run_reliability(
+    config, *, seed: Optional[int] = None, write: bool = True, verbose: bool = True
+) -> ReliabilityRunResult:
     """Evaluate the evaluator: verdict-flip rate under meaning-preserving
     perturbation, plus judge-vs-reference disagreement. Writes reliability.json.
 
     A judge that cannot be built (replay_only / disabled / missing key) yields a
     SKIPPED result with no flip rate, so gate 5 stays NOT_EVALUATED rather than
     being handed a fabricated pass.
+
+    verbose  when True (default), emit progress to stderr as the sweep runs. The
+    invariance suite is the harness's most call-heavy command (baseline + four
+    perturbations = 5x a normal run over every judge scorer), so a silent live run
+    looks hung; the heartbeat makes each scoring pass and each judge call visible.
     """
     jcfg = config.get("judge", {})
     seed = seed if seed is not None else config["run"]["seed"]
+
+    def _log(msg: str) -> None:
+        if verbose:
+            print(msg, file=sys.stderr, flush=True)
+
     try:
         judge = build_judge(jcfg)
     except JudgeConfigError as exc:
@@ -358,9 +371,26 @@ def run_reliability(config, *, seed: Optional[int] = None, write: bool = True) -
             verdict_flip_rate=None, gate5_status="not_evaluated",
         )
 
-    scorers = build_judge_scorers(judge)
+    # Wrap the judge with a running-count heartbeat so a long live sweep is visibly
+    # progressing rather than apparently stalled on the API. The count spans the
+    # invariance passes AND the disagreement audit (both go through this seam).
+    counter = {"n": 0}
+    if verbose:
+        def judge_for_scorers(prompt_name, payload, _inner=judge, _c=counter):
+            _c["n"] += 1
+            print(f"  [reliability] judge call {_c['n']:>4}  {prompt_name}", file=sys.stderr, flush=True)
+            return _inner(prompt_name, payload)
+    else:
+        judge_for_scorers = judge
+
+    scorers = build_judge_scorers(judge_for_scorers)
     records, _ = _reliability_records(config)
-    report = run_invariance(records, scorers, seed=seed)
+    _log(f"[reliability] {len(records)} record(s); baseline + 4 perturbations = 5 scoring passes "
+         f"(judge model {jcfg.get('model')}, request_interval {jcfg.get('request_interval', 0)}s)")
+    report = run_invariance(
+        records, scorers, seed=seed,
+        progress=(lambda stage: _log(f"[reliability] scoring pass: {stage}")) if verbose else None,
+    )
 
     # Judge-vs-reference disagreement over the groundability audit, when present.
     disagreement = None
@@ -368,7 +398,9 @@ def run_reliability(config, *, seed: Optional[int] = None, write: bool = True) -
     if audit_path:
         resolved = resolve(config, audit_path)
         if resolved.exists():
-            disagreement = audit_groundedness(judge, load_groundability_audit(resolved))
+            _log("[reliability] judge-vs-reference disagreement audit (groundability_audit)")
+            disagreement = audit_groundedness(judge_for_scorers, load_groundability_audit(resolved))
+    _log(f"[reliability] done: {counter['n']} judge call(s) total")
 
     flip_rate = report.gate_input()
     thr = load_thresholds(resolve(config, config.get("paths", {}).get("thresholds", "configs/thresholds.yaml")))

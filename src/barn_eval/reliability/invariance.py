@@ -200,6 +200,7 @@ def run_invariance(
     *,
     perturbations: Optional[dict[str, Callable[..., EvaluationRecord]]] = None,
     seed: int = 0,
+    progress: Optional[Callable[[str], None]] = None,
 ) -> ReliabilityReport:
     """Score baseline vs each perturbed variant and measure the verdict-flip rate.
 
@@ -207,12 +208,19 @@ def run_invariance(
     scorers       the judge scorers, already built with the injected judge; the
                   SAME instances score baseline and every perturbation
     perturbations name -> transform; defaults to the four meaning-preserving ones
+    progress      optional callback fired with the name of each scoring pass
+                  ("baseline", then each perturbation) as it begins, so a caller
+                  can surface progress on a long live sweep
     """
     perturbations = perturbations if perturbations is not None else default_perturbations()
+    if progress:
+        progress("baseline")
     baseline_idx = _verdict_index(_score(scorers, records))
 
     results: list[PerturbationResult] = []
     for name, transform in perturbations.items():
+        if progress:
+            progress(name)
         perturbed_records = [transform(r, seed=seed) for r in records]
         perturbed_idx = _verdict_index(_score(scorers, perturbed_records))
         results.append(_compare(name, baseline_idx, perturbed_idx))
