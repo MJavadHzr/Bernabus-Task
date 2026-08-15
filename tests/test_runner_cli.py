@@ -38,8 +38,17 @@ def test_validate_clean_suite_passes():
 
 # --- run --------------------------------------------------------------------
 
+def _offline_judge(cfg):
+    """Force the judge OFF for hermetic tests. The default config's judge toggle is
+    a live operator setting (it may be flipped to replay_only=false to run against
+    OpenRouter); unit tests must never depend on it or make network calls, so they
+    pin the skipped-judge path they were written to exercise."""
+    cfg.setdefault("judge", {})["replay_only"] = True
+    return cfg
+
+
 def _config_with_output(tmp_path):
-    cfg = load_config(REAL_CONFIG)
+    cfg = _offline_judge(load_config(REAL_CONFIG))
     cfg["run"]["output_dir"] = str(tmp_path / "runs")
     return cfg
 
@@ -101,7 +110,7 @@ def test_rehash_fixes_wrong_hash_then_is_idempotent(tmp_path):
 def _abs_config_file(tmp_path):
     """A self-contained config with every path absolute, so `main` can run it from
     anywhere and write into tmp."""
-    cfg = load_config(REAL_CONFIG)
+    cfg = _offline_judge(load_config(REAL_CONFIG))
     cfg["data"]["patients"] = str(resolve(cfg, cfg["data"]["patients"]))
     cfg["data"]["cases"] = [str(p) for p in resolve_globs(cfg, cfg["data"]["cases"])]
     cfg["data"]["responses"] = str(resolve(cfg, cfg["data"]["responses"]))
@@ -118,9 +127,12 @@ def _abs_config_file(tmp_path):
     return str(path)
 
 
-def test_cli_validate_and_reliability_return_zero(capsys):
+def test_cli_validate_and_reliability_return_zero(tmp_path, capsys):
     assert cli.main(["validate", "--config", REAL_CONFIG]) == 0
-    assert cli.main(["reliability", "--config", REAL_CONFIG]) == 0
+    # Offline config: the reliability suite skips (no live judge), so gate 5 stays
+    # NOT_EVALUATED and no network call is made from a unit test.
+    cfg_file = _abs_config_file(tmp_path)
+    assert cli.main(["reliability", "--config", cfg_file]) == 0
     out = capsys.readouterr().out
     assert "NOT_EVALUATED" in out  # reliability declares its pending state
 

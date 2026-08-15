@@ -16,8 +16,10 @@ from .harness.config import load_config, resolve
 from .harness.runner import (
     EXIT_OK,
     EXIT_PRECONDITION,
+    read_flip_rate,
     rehash_cases,
     run,
+    run_reliability,
     validate,
 )
 from .reporting import render_summary
@@ -45,20 +47,43 @@ def _cmd_validate(args) -> int:
 
 def _cmd_run(args) -> int:
     config = load_config(args.config)
-    result = run(config)
+    flip = read_flip_rate(args.reliability) if args.reliability else None
+    result = run(config, evaluator_flip_rate=flip)
     print(render_summary(json.loads((result.run_dir / "result.json").read_text())))
     print(f"run dir: {result.run_dir}")
     print(f"judge: {result.judge_status}")
+    if args.reliability:
+        print(f"reliability: verdict_flip_rate={flip} (from {args.reliability})")
     return result.exit_code
 
 
 def _cmd_reliability(args) -> int:
-    # Phase 6 slot. Until implemented, gate 5 stays NOT_EVALUATED (see runner /
-    # aggregation.gates); this command declares that state rather than faking a pass.
-    print("reliability (block condition §3.14.5) is not yet implemented in this build.")
-    print("gate 5 remains NOT_EVALUATED and every run is at best PROVISIONAL_PASS.")
-    print("the evaluator-invariance suite needs a live judge, which is currently unavailable.")
-    return EXIT_OK
+    """Evaluate the evaluator (§3.14.5): verdict-flip rate under meaning-preserving
+    perturbation, plus judge-vs-reference disagreement. Feeds gate 5."""
+    config = load_config(args.config)
+    res = run_reliability(config, seed=args.seed)
+    if res.verdict_flip_rate is None:
+        print(f"reliability SKIPPED: {res.judge_status}")
+        print("gate 5 stays NOT_EVALUATED; a run consuming this is at best PROVISIONAL_PASS.")
+        return EXIT_OK
+
+    rep = res.report
+    print(f"judge: {res.judge_status}")
+    print(f"EVALUATOR INVARIANCE (§3.14.5): verdict_flip_rate={rep.verdict_flip_rate:.3f}  "
+          f"({rep.n_flips}/{rep.n_compared} unit-verdicts flipped) -> gate 5 {res.gate5_status.upper()}")
+    for p in rep.per_perturbation:
+        print(f"  {p.name:<16} flips {p.flip_count}/{p.compared}  (rate {p.flip_rate:.3f}"
+              f"{'; judge_errors=' + str(p.judge_errors) if p.judge_errors else ''})")
+    if rep.judge_errors_excluded:
+        print(f"  NOTE: {rep.judge_errors_excluded} unit-verdict(s) excluded as judge outages, not flips")
+    if res.disagreement is not None:
+        d = res.disagreement
+        print(f"JUDGE vs REFERENCE ({d.metric}): disagreement_rate={d.disagreement_rate:.3f} "
+              f"({d.disagreements}/{d.n}); judge_errors={d.judge_errors}")
+    if res.out_path:
+        print(f"wrote {res.out_path}")
+        print(f"feed it into a scored run:  barn_eval run --reliability {res.out_path}")
+    return res.exit_code
 
 
 def _cmd_report(args) -> int:
@@ -93,10 +118,14 @@ def main(argv=None) -> int:
 
     p_run = sub.add_parser("run", help="full evaluation run")
     p_run.add_argument("--config", default=DEFAULT_CONFIG)
+    p_run.add_argument("--reliability", default=None,
+                       help="reliability.json to source gate 5's verdict_flip_rate from")
     p_run.set_defaults(func=_cmd_run)
 
     p_rel = sub.add_parser("reliability", help="evaluator invariance suite (§3.14.5)")
     p_rel.add_argument("--config", default=DEFAULT_CONFIG)
+    p_rel.add_argument("--seed", type=int, default=None,
+                       help="perturbation seed (default: run.seed from config)")
     p_rel.set_defaults(func=_cmd_reliability)
 
     p_rep = sub.add_parser("report", help="summary + card from an existing run")
