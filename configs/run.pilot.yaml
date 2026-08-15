@@ -1,0 +1,54 @@
+# Pilot run: 3 generated cases (1 clean + 2 adversarial) against a simulated RAG
+# fixture, to exercise the harness end to end. Judge is OFFLINE here so the check
+# needs no network / no OpenRouter account; judge-side metrics are reported as
+# SKIPPED (not passed). Flip replay_only to false to add the judge-scored metrics.
+
+run:
+  seed: 20260815
+  evaluation_version: "1.1.0"
+  preprocessor_version: null
+  experiment_id: "pilot_generated"
+  output_dir: "results/runs"
+
+data:
+  patients: "data/synthetic/generated/patients.json"
+  cases:
+    - "evaluation_cases/generated/pilot.jsonl"
+  responses: "results/responses/simulated_pilot.jsonl"
+  confirmations: "results/confirmations/"
+  groundability_audit: "evaluation_cases/groundability_audit.jsonl"
+
+paths:
+  severity_map: "configs/severity_map.yaml"
+  thresholds: "configs/thresholds.yaml"
+
+# Declared, never inferred (Gate Two): these responses are a simulated fixture,
+# not the output of a real RAG prototype.
+response_source: "simulated_fixture"
+response_source_version: "pilot"
+
+retrieval:
+  k: "retrieved_set_size"
+  ordering_policy: "score"
+  warn_on_null_score: true
+
+judge:
+  enabled: true
+  provider: "openrouter"
+  base_url: "https://openrouter.ai/api/v1"
+  api_key_env: "OPENROUTER_API_KEY"
+  model: "openai/gpt-oss-20b:free"
+  prompt_version: "v1"
+  cache_dir: "results/judge_cache"
+  replay_only: false
+  temperature: 0.0
+  max_tokens: 4096
+  timeout: 120
+  max_retries: 4
+  request_interval: 5.0
+
+failure_handling:
+  on_missing_response: "record"
+  on_load_error: "record"
+  exit_nonzero_on_missing: true
+  silently_drop_cases: false
