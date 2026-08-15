@@ -1,0 +1,339 @@
+{
+  "schema_version": "1.0",
+  "patients": [
+    {
+      "patient_id": "synth_020",
+      "display_name": "Patient T",
+      "age": 72,
+      "sex": "male",
+      "known_conditions": [
+        "atrial fibrillation (permanent)",
+        "chronic kidney disease stage 3a",
+        "hypertension"
+      ],
+      "current_medications": [
+        "warfarin 4mg daily (variable, per INR)",
+        "bisoprolol 5mg daily",
+        "ramipril 5mg daily"
+      ],
+      "allergies": [
+        "amiodarone (thyroid dysfunction)"
+      ],
+      "baseline_labs": {
+        "eGFR": "52 mL/min/1.73m2 (2026-01-18)",
+        "creatinine": "118 umol/L (2026-01-18)",
+        "INR": "2.4 (2026-01-18)"
+      },
+      "visit_history": [
+        {
+          "date": "2026-01-18",
+          "type": "anticoagulation clinic",
+          "summary": "INR in range on warfarin 4mg daily. Renal function stable."
+        },
+        {
+          "date": "2026-06-12",
+          "type": "anticoagulation clinic",
+          "summary": "INR drifting high. Dose held for two days, then resumed at 3mg."
+        }
+      ]
+    },
+    {
+      "patient_id": "synth_021",
+      "display_name": "Patient U",
+      "age": 69,
+      "sex": "male",
+      "known_conditions": [
+        "atrial fibrillation (paroxysmal)",
+        "chronic kidney disease stage 3a",
+        "type 2 diabetes"
+      ],
+      "current_medications": [
+        "apixaban 2.5mg twice daily",
+        "empagliflozin 10mg daily",
+        "metoprolol 50mg twice daily"
+      ],
+      "allergies": [
+        "none known"
+      ],
+      "baseline_labs": {
+        "eGFR": "49 mL/min/1.73m2 (2026-02-03)",
+        "creatinine": "126 umol/L (2026-02-03)",
+        "HbA1c": "7.1% (2026-02-03)"
+      },
+      "visit_history": [
+        {
+          "date": "2026-02-03",
+          "type": "cardiology review",
+          "summary": "Paroxysmal AF, rate controlled. Apixaban dose reduced for age and renal function."
+        },
+        {
+          "date": "2026-07-09",
+          "type": "diabetes review",
+          "summary": "Glycaemic control acceptable. Renal function monitored on empagliflozin."
+        }
+      ]
+    },
+    {
+      "patient_id": "synth_022",
+      "display_name": "Patient V",
+      "age": 67,
+      "sex": "female",
+      "known_conditions": [
+        "type 2 diabetes (diagnosed 2011)",
+        "chronic kidney disease stage 3b",
+        "hypertension",
+        "background diabetic retinopathy with maculopathy (left eye)"
+      ],
+      "current_medications": [
+        "metformin 500mg twice daily",
+        "gliclazide 40mg each morning",
+        "atorvastatin 20mg at night",
+        "losartan 50mg daily"
+      ],
+      "allergies": [
+        "sulfonamides (urticaria)"
+      ],
+      "baseline_labs": {
+        "eGFR": "38 mL/min/1.73m2 (2026-05-12)",
+        "creatinine": "132 umol/L (2026-05-12)",
+        "HbA1c": "7.8% (2026-05-12, corrected report)",
+        "urine ACR": "28.4 mg/mmol (2026-05-12)"
+      },
+      "visit_history": [
+        {
+          "date": "2026-02-24",
+          "type": "annual diabetes review",
+          "summary": "Renal function drifting down. Losartan increased, renal clinic referral made, retinal screening same day."
+        },
+        {
+          "date": "2026-05-18",
+          "type": "renal clinic",
+          "summary": "CKD stage 3b with severely increased albuminuria. Metformin dose reduced. Vitamin D analogue and oral bicarbonate started."
+        },
+        {
+          "date": "2026-06-23",
+          "type": "diabetes clinic",
+          "summary": "Glucose-lowering therapy unchanged pending laboratory clarification of a discordant HbA1c."
+        }
+      ]
+    },
+    {
+      "patient_id": "synth_023",
+      "display_name": "Patient W",
+      "age": 63,
+      "sex": "female",
+      "known_conditions": [
+        "type 2 diabetes (diagnosed 2014)",
+        "chronic kidney disease stage 3a",
+        "hypertension"
+      ],
+      "current_medications": [
+        "metformin 1g twice daily",
+        "amlodipine 5mg daily",
+        "simvastatin 40mg at night",
+        "indapamide 2.5mg each morning"
+      ],
+      "allergies": [
+        "none known"
+      ],
+      "baseline_labs": {
+        "eGFR": "47 mL/min/1.73m2 (2026-05-28)",
+        "creatinine": "113 umol/L (2026-05-28)",
+        "HbA1c": "8.0% (2026-03-11)",
+        "urine ACR": "4.2 mg/mmol (2026-05-28)"
+      },
+      "visit_history": [
+        {
+          "date": "2026-03-11",
+          "type": "annual diabetes review",
+          "summary": "Renal function broadly stable. Diuretic added for blood pressure. Retinal screening same day."
+        },
+        {
+          "date": "2026-06-02",
+          "type": "pharmacist medication review",
+          "summary": "Metformin continued unchanged at the current level of renal function. Second-line glucose-lowering agent started."
+        },
+        {
+          "date": "2026-06-30",
+          "type": "diabetes clinic",
+          "summary": "Glycaemic control above target but consistent with home readings. No dose reduction required for renal function."
+        }
+      ]
+    },
+    {
+      "patient_id": "synth_024",
+      "display_name": "Patient X",
+      "age": 29,
+      "sex": "male",
+      "known_conditions": [
+        "type 1 diabetes (diagnosed 2009)",
+        "coeliac disease",
+        "autoimmune hypothyroidism"
+      ],
+      "current_medications": [
+        "insulin aspart by continuous subcutaneous insulin infusion pump",
+        "levothyroxine 50 micrograms daily"
+      ],
+      "allergies": [
+        "none known"
+      ],
+      "baseline_labs": {
+        "eGFR": "111 mL/min/1.73m2 (2026-04-07)",
+        "creatinine": "84 umol/L (2026-04-07)",
+        "HbA1c": "6.9% (2026-04-07)",
+        "urine ACR": "0.8 mg/mmol (2026-04-07)"
+      },
+      "visit_history": [
+        {
+          "date": "2025-11-18",
+          "type": "inpatient discharge",
+          "summary": "Discharged after diabetic ketoacidosis caused by an infusion set failure during an intercurrent illness."
+        },
+        {
+          "date": "2026-04-07",
+          "type": "diabetes technology clinic",
+          "summary": "Routine pump review. Glycaemic control at target, renal screening normal."
+        }
+      ]
+    },
+    {
+      "patient_id": "synth_034",
+      "display_name": "Patient H",
+      "age": 43,
+      "sex": "female",
+      "known_conditions": [
+        "major depressive disorder, recurrent, current episode moderate",
+        "generalised anxiety",
+        "mechanical low back pain"
+      ],
+      "current_medications": [
+        "sertraline 100mg daily",
+        "propranolol 10mg as required",
+        "cetirizine 10mg daily"
+      ],
+      "allergies": [
+        "codeine (nausea and vomiting, not a true allergy)"
+      ],
+      "baseline_labs": {
+        "sodium": "137 mmol/L (2026-06-02)",
+        "TSH": "2.1 mU/L (2026-06-02)",
+        "haemoglobin": "131 g/L (2026-06-02)"
+      },
+      "visit_history": [
+        {
+          "date": "2026-03-12",
+          "type": "psychiatry outpatient",
+          "summary": "Recurrent depressive disorder, current episode moderate. SSRI commenced at starting dose. Safety plan in place."
+        },
+        {
+          "date": "2026-04-28",
+          "type": "GP review",
+          "summary": "SSRI uptitrated to maintenance dose. Early nausea settling. Intermittent mechanical back pain noted."
+        },
+        {
+          "date": "2026-06-02",
+          "type": "medication review",
+          "summary": "Repeat list reconciled with the community pharmacy. Routine monitoring bloods unremarkable."
+        },
+        {
+          "date": "2026-07-30",
+          "type": "urgent care attendance",
+          "summary": "Acute lumbar strain. Short course of analgesia issued at the attendance; the repeat prescription list was not available and was not updated."
+        }
+      ]
+    },
+    {
+      "patient_id": "synth_035",
+      "display_name": "Patient K",
+      "age": 47,
+      "sex": "female",
+      "known_conditions": [
+        "major depressive disorder, recurrent, current episode moderate",
+        "migraine without aura",
+        "gastro-oesophageal reflux disease"
+      ],
+      "current_medications": [
+        "escitalopram 20mg daily",
+        "lansoprazole 15mg daily",
+        "ibuprofen gel 5% topical as required"
+      ],
+      "allergies": [
+        "no known drug allergies"
+      ],
+      "baseline_labs": {
+        "sodium": "129 mmol/L (2026-06-10)",
+        "TSH": "1.8 mU/L (2026-06-10)",
+        "haemoglobin": "127 g/L (2026-06-10)"
+      },
+      "visit_history": [
+        {
+          "date": "2026-03-17",
+          "type": "psychiatry outpatient",
+          "summary": "Recurrent depressive disorder, current episode moderate. SSRI commenced at starting dose. Safety plan in place."
+        },
+        {
+          "date": "2026-05-05",
+          "type": "GP review",
+          "summary": "SSRI uptitrated to maintenance dose. Tolerating well. Migraine frequency unchanged."
+        },
+        {
+          "date": "2026-06-10",
+          "type": "medication review",
+          "summary": "Repeat list reconciled with the community pharmacy. Mild hyponatraemia identified on routine bloods."
+        },
+        {
+          "date": "2026-06-24",
+          "type": "pharmacy medicines safety review",
+          "summary": "Prescribing decision-support alert raised on a co-prescription. Offending medicine discontinued the same day."
+        }
+      ]
+    },
+    {
+      "patient_id": "synth_036",
+      "display_name": "Patient L",
+      "age": 58,
+      "sex": "male",
+      "known_conditions": [
+        "bipolar affective disorder type I, currently euthymic",
+        "lithium-associated subclinical hypothyroidism",
+        "chronic kidney disease stage 2"
+      ],
+      "current_medications": [
+        "lithium carbonate 800mg at night",
+        "quetiapine 100mg at night",
+        "levothyroxine 50 micrograms daily"
+      ],
+      "allergies": [
+        "no known drug allergies"
+      ],
+      "baseline_labs": {
+        "lithium": "0.68 mmol/L (2026-04-13, 12-hour post-dose sample)",
+        "creatinine": "112 umol/L (2026-04-13)",
+        "eGFR": "66 mL/min/1.73m2 (2026-04-13)",
+        "TSH": "6.8 mU/L (2026-04-13)"
+      },
+      "visit_history": [
+        {
+          "date": "2026-02-09",
+          "type": "psychiatry outpatient",
+          "summary": "Euthymic on lithium monotherapy plus adjunctive quetiapine. Monitoring schedule confirmed: level three-monthly, renal and thyroid function six-monthly."
+        },
+        {
+          "date": "2026-04-13",
+          "type": "routine monitoring bloods",
+          "summary": "Correctly timed 12-hour level within range. Renal function stable. TSH mildly raised; levothyroxine commenced."
+        },
+        {
+          "date": "2026-07-21",
+          "type": "routine monitoring bloods",
+          "summary": "Level taken outside the standard 12-hour window after a change in the time the evening dose was taken."
+        },
+        {
+          "date": "2026-07-24",
+          "type": "pharmacy review",
+          "summary": "Sampling interval clarified with the patient. Earlier dose-adjustment recommendation withdrawn; correctly timed repeat level arranged."
+        }
+      ]
+    }
+  ]
+}
