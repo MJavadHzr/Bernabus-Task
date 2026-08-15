@@ -1,18 +1,19 @@
-# Run configuration for simulated RAG responses over the generated clean cases.
-# Based on run.default.yaml but pointing at the generated cases and simulated responses.
+# Adversarial Run
 
 run:
-  seed: 20260813
+  seed: 20260815
   evaluation_version: "1.1.0"
   preprocessor_version: null
-  experiment_id: "rag_generated_clean"
+  experiment_id: "rag_generated_adversarial"
   output_dir: "results/runs"
 
 data:
   patients: "data/synthetic/generated/patients.json"
   cases:
-    - "evaluation_cases/generated/clean.jsonl"
-  responses: "results/responses/rag_20260815T190414Z_pooled_dense_clean.jsonl"
+    - "evaluation_cases/generated/adv_evidence.jsonl"
+    - "evaluation_cases/generated/adv_grounding.jsonl"
+    - "evaluation_cases/generated/adv_robustness.jsonl"
+  responses: "results/responses/rag_20260815T184636Z_pooled_dense_adv.jsonl"
   confirmations: "results/confirmations/"
   groundability_audit: "evaluation_cases/groundability_audit.jsonl"
 

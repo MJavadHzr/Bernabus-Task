@@ -7,14 +7,14 @@ run:
   seed: 20260815
   evaluation_version: "1.1.0"
   preprocessor_version: null
-  experiment_id: "pilot_generated"
+  experiment_id: "rag_generated_pilot"
   output_dir: "results/runs"
 
 data:
   patients: "data/synthetic/generated/patients.json"
   cases:
     - "evaluation_cases/generated/pilot.jsonl"
-  responses: "results/responses/simulated_pilot.jsonl"
+  responses: "results/responses/rag_20260815T172021Z_pooled_dense_pilot.jsonl"
   confirmations: "results/confirmations/"
   groundability_audit: "evaluation_cases/groundability_audit.jsonl"
 
@@ -22,10 +22,8 @@ paths:
   severity_map: "configs/severity_map.yaml"
   thresholds: "configs/thresholds.yaml"
 
-# Declared, never inferred (Gate Two): these responses are a simulated fixture,
-# not the output of a real RAG prototype.
-response_source: "simulated_fixture"
-response_source_version: "pilot"
+response_source: "rag_prototype"
+response_source_version: "v1"
 
 retrieval:
   k: "retrieved_set_size"
@@ -45,7 +43,7 @@ judge:
   max_tokens: 4096
   timeout: 120
   max_retries: 4
-  request_interval: 5.0
+  request_interval: 2.0
 
 failure_handling:
   on_missing_response: "record"
