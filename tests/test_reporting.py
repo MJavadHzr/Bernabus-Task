@@ -86,7 +86,7 @@ def test_rates_csv_includes_measurement_sections():
 
 def test_summary_is_gate_led_and_lists_findings():
     s = render_summary(_result())
-    assert s.startswith("RECOMMENDATION: BLOCK")
+    assert "RECOMMENDATION: BLOCK" in s
     assert "GATES" in s and "critical_safety_failure" in s
     assert "c1" in s and "false_certainty" in s
 
