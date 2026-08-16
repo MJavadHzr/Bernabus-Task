@@ -42,7 +42,7 @@ You can use the provided `Makefile` to interact with the harness.
   ```bash
   make eval
   ```
-  *(To use a specific configuration, run: `make eval CONFIG=configs/run.generated_clean.yaml`)*
+  *(To use a specific configuration, run: `make eval CONFIG=configs/run.default.yaml`)*
 
 - **Generate a report from the latest run:**
   ```bash
@@ -53,6 +53,66 @@ You can use the provided `Makefile` to interact with the harness.
   ```bash
   make test
   ```
+
+### 4. Inputs and pointing the harness at your own data
+
+Every command is driven by a **run config** (a YAML file under `configs/`). `make eval`,
+`make validate`, `make report`, and `make reliability` all default to
+`CONFIG := configs/run.pilot.yaml`; override it on any target with
+`make eval CONFIG=configs/<your-config>.yaml`.
+
+A run needs two things — **evaluation cases** (the questions + a gold answer key) and
+**model responses** (what a system produced for those cases) — plus a patient registry. The
+config's `data:` block names where each input lives. All paths are resolved **relative to the
+repository root**:
+
+```yaml
+data:
+  patients: "data/synthetic/generated/patients.json"   # patient registry (JSON)
+  cases:                                                 # one or more case files/globs (JSONL)
+    - "evaluation_cases/generated/pilot.jsonl"
+  responses: "results/responses/<your-responses>.jsonl" # the system-under-test's output (JSONL)
+  confirmations: "results/confirmations/"               # human E5 confirmations dir (may be empty)
+  groundability_audit: "evaluation_cases/groundability_audit.jsonl"  # optional; used only by `make reliability`
+
+paths:
+  severity_map: "configs/severity_map.yaml"             # scoring config (defaults provided)
+  thresholds:   "configs/thresholds.yaml"               # release-gate thresholds (frozen before a run)
+
+response_source: "rag_prototype"   # DECLARE the source: `simulated_fixture` or `rag_prototype`
+```
+
+**Where to put your files:**
+
+| Input | Default location | Who produces it |
+|---|---|---|
+| Evaluation cases (`*.jsonl`) | `evaluation_cases/` | the eval author (see the [Input Contract](docs/input_contract.md) and the case schema) |
+| Patient registry (`.json`) | `data/synthetic/` | the eval author; `patient_context` in every case must be a subset of it |
+| Model responses (`*.jsonl`) | `results/responses/` | the system under test (e.g. `Clinical-RAG/`, via its `make export`) |
+| Human confirmations | `results/confirmations/` | optional; only for E4→E5 authority promotions |
+
+**To evaluate your own system, two options:**
+
+1. **Edit a config in place** — open `configs/run.pilot.yaml` (or copy it) and point the
+   `data:` keys at your files.
+2. **Add a new config** — copy `configs/run.pilot.yaml` to `configs/run.mine.yaml`, edit its
+   `data:` block, then run `make eval CONFIG=configs/run.mine.yaml`.
+
+Two switches worth knowing before your first run:
+
+- **`response_source`** must be declared honestly: use `simulated_fixture` for hand-authored /
+  placeholder responses and `rag_prototype` for a real system's output. Reports stamp a
+  "SIMULATED FIXTURE" banner on anything that isn't `rag_prototype`, so a fixture number is
+  never mistaken for a real one.
+- **`judge.replay_only`** — set it to `true` to run **offline** (deterministic scorers only; no
+  API key needed, judge-side metrics reported as *skipped*), or `false` to call the live LLM
+  judge (needs `OPENROUTER_API_KEY`).
+
+Before scoring, check that your data is wired correctly and passes the schema + registry
+preconditions:
+```bash
+make validate CONFIG=configs/run.mine.yaml
+```
 
 ## Input Schema Card
 
